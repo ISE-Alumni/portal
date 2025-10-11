@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon, MapPinIcon, LinkIcon, ClockIcon, FileTextIcon } from "lucide-react";
+import { CalendarIcon, MapPinIcon, LinkIcon, ClockIcon, FileTextIcon, EyeIcon, EditIcon } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
 
 // NewEventModal sub-component
 interface NewEventModalProps {
@@ -41,6 +43,8 @@ interface ExistingEventProps {
 const NewEventModal = ({ isOpen, onClose }: NewEventModalProps) => {
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [description, setDescription] = useState<string>("");
+  const [showPreview, setShowPreview] = useState<boolean>(false);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -116,15 +120,53 @@ const NewEventModal = ({ isOpen, onClose }: NewEventModalProps) => {
 
           {/* Description */}
           <div data-testid="description-section" className="space-y-2">
-            <Label htmlFor="description" className="text-sm font-medium flex items-center gap-2">
-              <FileTextIcon className="w-4 h-4" />
-              Description
-            </Label>
-            <Textarea 
-              id="description"
-              placeholder="Add event details, agenda, or any additional information..."
-              className="min-h-[100px] resize-none"
-            />
+            <div className="flex items-center justify-between">
+              <Label htmlFor="description" className="text-sm font-medium flex items-center gap-2">
+                <FileTextIcon className="w-4 h-4" />
+                Description (Markdown supported)
+              </Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPreview(!showPreview)}
+                className="flex items-center gap-2"
+              >
+                {showPreview ? (
+                  <>
+                    <EditIcon className="w-3 h-3" />
+                    Edit
+                  </>
+                ) : (
+                  <>
+                    <EyeIcon className="w-3 h-3" />
+                    Preview
+                  </>
+                )}
+              </Button>
+            </div>
+            
+            {showPreview ? (
+              <div className="min-h-[100px] p-3 border rounded-md bg-muted/50">
+                {description ? (
+                  <div className="text-sm leading-relaxed prose prose-sm max-w-none">
+                    <ReactMarkdown>{description}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">
+                    No description entered yet. Click "Edit" to add content.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <Textarea
+                id="description"
+                placeholder="Add event details, agenda, or any additional information... You can use Markdown formatting like **bold**, *italic*, [links](https://example.com), etc."
+                className="min-h-[100px] resize-none"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            )}
           </div>
 
           {/* Location & Link */}
