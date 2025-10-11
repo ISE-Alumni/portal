@@ -14,6 +14,30 @@ interface NewEventModalProps {
   onClose: () => void;
 }
 
+
+const ExistingEvent = ({ event }: ExistingEventProps) => {
+  return (
+    <Card key={event.id} className="border-2 border-foreground shadow-none">
+      <CardHeader className="pb-2">
+        <CardTitle className="tracking-tight">{event.name}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-sm mb-3">{event.date} — {event.location}</div>
+        <Button className="w-full">Details</Button>
+      </CardContent>
+    </Card>
+  );
+};
+interface ExistingEventProps {
+  event: {
+    name: string;
+    date: string;
+    location: string;
+    id: number;
+  };
+}
+
+
 const NewEventModal = ({ isOpen, onClose }: NewEventModalProps) => {
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
@@ -145,6 +169,7 @@ const NewEventModal = ({ isOpen, onClose }: NewEventModalProps) => {
 };
 
 // To Do : Move this to a dynamic API call to supabase
+// This should be filtered to only show events that are in the future
 const mockEvents = [
   { id: 1, name: "Monthly AMA", date: "2025-09-30", location: "Online" },
   { id: 2, name: "Hack Night", date: "2025-10-12", location: "NYC" },
@@ -164,15 +189,7 @@ const Events = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {mockEvents.map((e) => (
-          <Card key={e.id} className="border-2 border-foreground shadow-none">
-            <CardHeader className="pb-2">
-              <CardTitle className="tracking-tight">{e.name}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-sm mb-3">{e.date} — {e.location}</div>
-              <Button className="w-full">Details</Button>
-            </CardContent>
-          </Card>
+          <ExistingEvent key={e.id} event={e} />
         ))}
       </div>
 
