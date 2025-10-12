@@ -18,6 +18,12 @@ interface NewEventModalProps {
 
 
 const ExistingEvent = ({ event }: ExistingEventProps) => {
+  const navigate = useNavigate();
+
+  const handleViewDetails = () => {
+    navigate(`/events/${event.id}`);
+  };
+
   return (
     <Card key={event.id} className="border-2 border-foreground shadow-none">
       <CardHeader className="pb-2">
@@ -25,7 +31,7 @@ const ExistingEvent = ({ event }: ExistingEventProps) => {
       </CardHeader>
       <CardContent>
         <div className="text-sm mb-3">{event.date} — {event.location}</div>
-        <Button className="w-full">Details</Button>
+        <Button className="w-full" onClick={handleViewDetails}>Details</Button>
       </CardContent>
     </Card>
   );
