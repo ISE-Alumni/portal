@@ -145,8 +145,8 @@ const Index = () => {
         email_visible: emailVisible,
       };
 
-      // Only include avatar_url if it was successfully uploaded or if not uploading
-      if (avatarFile && avatarUrlToSave !== avatarUrl) {
+      // Only include avatar_url if an avatar was uploaded and upload succeeded
+      if (avatarFile && avatarUrlToSave) {
         payload.avatar_url = avatarUrlToSave;
       }
 
