@@ -90,10 +90,8 @@ const Directory = () => {
         setError("Search failed. Please try again.");
         setResults([]);
       } finally {
-        if (!signal.aborted) {
-          setLoading(false);
-          isSearching.current = false;
-        }
+        setLoading(false);
+        isSearching.current = false;
       }
     };
 
