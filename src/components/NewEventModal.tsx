@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogTitle, DialogHeader, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,23 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }: NewEventModalProps) 
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+
+  // Reset form when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setEventName("");
+      setDescription("");
+      setLocation("");
+      setLink("");
+      setStartTime("");
+      setEndTime("");
+      setTags("");
+      setStartDate(undefined);
+      setEndDate(undefined);
+      setShowPreview(false);
+      setError(null);
+    }
+  }, [isOpen]);
 
   const generateSlug = (title: string) => {
     return title
@@ -149,7 +166,7 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }: NewEventModalProps) 
             <Input 
               id="event-name"
               placeholder="e.g., Monthly AMA Session" 
-              className="w-full"
+              className={`w-full ${!eventName?.trim() ? 'border-red-300' : ''}`}
               value={eventName}
               onChange={(e) => setEventName(e.target.value)}
               disabled={isCreating}
@@ -166,26 +183,56 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }: NewEventModalProps) 
             
             <div data-testid="date-time-grid" className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6">
               <div data-testid="start-date" className="space-y-2">
-                <Label className="text-sm">Start Date *</Label>
-                <div className="border rounded-md p-2">
-                  <Calendar 
-                    mode="single"
-                    selected={startDate}
-                    onSelect={setStartDate}
+                <Label className="text-sm">
+                  Start Date <span className="text-red-500">*</span>
+                </Label>
+                <div className="space-y-2">
+                  <Input
+                    type="date"
+                    value={startDate ? startDate.toISOString().split('T')[0] : ''}
+                    onChange={(e) => {
+                      const date = e.target.value ? new Date(e.target.value) : undefined;
+                      setStartDate(date);
+                    }}
                     className="w-full"
+                    disabled={isCreating}
                   />
+                  <div className="border rounded-md p-2">
+                    <Calendar 
+                      mode="single"
+                      selected={startDate}
+                      onSelect={(date) => setStartDate(date)}
+                      className="w-full"
+                      disabled={(date) => date < new Date()}
+                      initialFocus
+                    />
+                  </div>
                 </div>
               </div>
               
               <div data-testid="end-date" className="space-y-2">
                 <Label className="text-sm">End Date</Label>
-                <div className="border rounded-md p-2">
-                  <Calendar 
-                    mode="single"
-                    selected={endDate}
-                    onSelect={setEndDate}
+                <div className="space-y-2">
+                  <Input
+                    type="date"
+                    value={endDate ? endDate.toISOString().split('T')[0] : ''}
+                    onChange={(e) => {
+                      const date = e.target.value ? new Date(e.target.value) : undefined;
+                      setEndDate(date);
+                    }}
                     className="w-full"
+                    disabled={isCreating}
                   />
+                  <div className="border rounded-md p-2">
+                    <Calendar 
+                      mode="single"
+                      selected={endDate}
+                      onSelect={(date) => setEndDate(date)}
+                      className="w-full"
+                      disabled={(date) => date < new Date() || (startDate && date < startDate)}
+                      initialFocus
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -194,14 +241,34 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }: NewEventModalProps) 
               <div data-testid="start-time" className="space-y-2">
                 <Label htmlFor="start-time" className="text-sm flex items-center gap-2">
                   <ClockIcon className="w-3 h-3" />
-                  Start Time *
+                  Start Time <span className="text-red-500">*</span>
                 </Label>
-                <Input 
-                  id="start-time" 
-                  type="time" 
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                />
+                <div className="space-y-2">
+                  <Input 
+                    id="start-time" 
+                    type="time" 
+                    value={startTime}
+                    onChange={(e) => {
+                      console.log('Start time changed:', e.target.value);
+                      setStartTime(e.target.value);
+                    }}
+                    disabled={isCreating}
+                    className={!startTime?.trim() ? 'border-red-300' : ''}
+                    placeholder="HH:MM"
+                  />
+                  <div className="text-xs text-muted-foreground">
+                    Current value: "{startTime}" | Length: {startTime?.length || 0}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setStartTime("18:00")}
+                    className="text-xs"
+                  >
+                    Set 6:00 PM (Test)
+                  </Button>
+                </div>
               </div>
               
               <div data-testid="end-time" className="space-y-2">
@@ -275,7 +342,7 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }: NewEventModalProps) 
             <div className="space-y-2">
               <Label htmlFor="location" className="text-sm font-medium flex items-center gap-2">
                 <MapPinIcon className="w-4 h-4" />
-                Location
+                Location URL
               </Label>
               <Input 
                 id="location"
@@ -293,10 +360,13 @@ const NewEventModal = ({ isOpen, onClose, onEventCreated }: NewEventModalProps) 
               <Input 
                 id="link"
                 type="url"
-                placeholder="https://..." 
+                placeholder="https://example.com or www.example.com" 
                 value={link}
                 onChange={(e) => setLink(e.target.value)}
               />
+              <p className="text-xs text-muted-foreground">
+                Enter a full URL (https://example.com) or domain (www.example.com)
+              </p>
             </div>
           </div>
 
