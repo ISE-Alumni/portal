@@ -34,6 +34,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      companies: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          industry: string | null
+          logo_url: string | null
+          name: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          industry?: string | null
+          logo_url?: string | null
+          name: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          industry?: string | null
+          logo_url?: string | null
+          name?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      company_offices: {
+        Row: {
+          address: string | null
+          city: string
+          company_id: string
+          country: string
+          created_at: string
+          id: string
+          is_headquarters: boolean | null
+          latitude: number
+          longitude: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city: string
+          company_id: string
+          country: string
+          created_at?: string
+          id?: string
+          is_headquarters?: boolean | null
+          latitude: number
+          longitude: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string
+          company_id?: string
+          country?: string
+          created_at?: string
+          id?: string
+          is_headquarters?: boolean | null
+          latitude?: number
+          longitude?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_offices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           created_at: string
@@ -103,6 +186,8 @@ export type Database = {
           company: string | null
           country: string | null
           created_at: string
+          current_company_id: string | null
+          current_office_id: string | null
           email: string | null
           email_visible: boolean | null
           full_name: string | null
@@ -113,6 +198,7 @@ export type Database = {
           job_title: string | null
           linkedin_url: string | null
           msc: boolean | null
+          position: string | null
           twitter_url: string | null
           updated_at: string
           user_id: string
@@ -128,6 +214,8 @@ export type Database = {
           company?: string | null
           country?: string | null
           created_at?: string
+          current_company_id?: string | null
+          current_office_id?: string | null
           email?: string | null
           email_visible?: boolean | null
           full_name?: string | null
@@ -138,6 +226,7 @@ export type Database = {
           job_title?: string | null
           linkedin_url?: string | null
           msc?: boolean | null
+          position?: string | null
           twitter_url?: string | null
           updated_at?: string
           user_id: string
@@ -153,6 +242,8 @@ export type Database = {
           company?: string | null
           country?: string | null
           created_at?: string
+          current_company_id?: string | null
+          current_office_id?: string | null
           email?: string | null
           email_visible?: boolean | null
           full_name?: string | null
@@ -163,13 +254,29 @@ export type Database = {
           job_title?: string | null
           linkedin_url?: string | null
           msc?: boolean | null
+          position?: string | null
           twitter_url?: string | null
           updated_at?: string
           user_id?: string
           user_type?: string
           website_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_current_company_id_fkey"
+            columns: ["current_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_current_office_id_fkey"
+            columns: ["current_office_id"]
+            isOneToOne: false
+            referencedRelation: "company_offices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tags: {
         Row: {
