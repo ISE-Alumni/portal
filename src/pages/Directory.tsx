@@ -1,222 +1,297 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
-import { Github, Linkedin, Twitter, ExternalLink } from "lucide-react";
+import { Github, Linkedin, Twitter, ExternalLink, Search } from "lucide-react";
 
 type Profile = Tables<"profiles">;
 
 const Directory = () => {
-  const [nameQuery, setNameQuery] = useState("");
-  const [companyQuery, setCompanyQuery] = useState("");
-  const [cohortQuery, setCohortQuery] = useState("");
-  const [debouncedName, setDebouncedName] = useState("");
-  const [debouncedCompany, setDebouncedCompany] = useState("");
-  const [debouncedCohort, setDebouncedCohort] = useState("");
-  const [results, setResults] = useState<Profile[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
+  const [filteredProfiles, setFilteredProfiles] = useState<Profile[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const isSearching = useRef(false);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Debounce the queries to avoid excessive API calls
+  // Load all profiles on mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedName(nameQuery);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [nameQuery]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedCompany(companyQuery);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [companyQuery]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedCohort(cohortQuery);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [cohortQuery]);
-
-  // Perform search when any debounced query changes
-  useEffect(() => {
-    // Cancel previous request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    const performSearch = async () => {
-      if (isSearching.current) return;
-      isSearching.current = true;
-      setLoading(true);
-      setError(null);
-
-      abortControllerRef.current = new AbortController();
-      const signal = abortControllerRef.current.signal;
-
+    const loadProfiles = async () => {
       try {
-        let queryBuilder = supabase
+        setLoading(true);
+        setError(null);
+
+        const { data, error } = await supabase
           .from("profiles")
-          .select("id, created_at, updated_at, user_id, full_name, email, city, country, graduation_year, job_title, company, bio, github_url, linkedin_url, twitter_url, website_url, avatar_url, email_visible, msc, admin, is_public, user_type")
+          .select("*")
           .eq("is_public", true)
-          .limit(50)
-          .abortSignal(signal);
-
-        if (debouncedName.trim()) {
-          queryBuilder = queryBuilder.ilike("full_name", `%${debouncedName}%`);
-        }
-        if (debouncedCompany.trim()) {
-          queryBuilder = queryBuilder.ilike("company", `%${debouncedCompany}%`);
-        }
-        if (debouncedCohort.trim()) {
-          queryBuilder = queryBuilder.ilike("cohort", `%${debouncedCohort}%`);
-        }
-
-        const { data, error } = await queryBuilder;
-
-        if (signal.aborted) return; // Ignore if aborted
+          .order("full_name");
 
         if (error) throw error;
-        setResults(data as any || []);
+
+        setAllProfiles(data || []);
+        setFilteredProfiles(data || []);
       } catch (err) {
-        if (signal.aborted) return; // Ignore aborted requests
-        console.error("Search error:", err);
-        setError("Search failed. Please try again.");
-        setResults([]);
+        console.error("Error loading profiles:", err);
+        setError("Failed to load alumni profiles. Please try again.");
       } finally {
         setLoading(false);
-        isSearching.current = false;
       }
     };
 
-    performSearch();
+    loadProfiles();
+  }, []);
 
-    // Cleanup on unmount or dependency change
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, [debouncedName, debouncedCompany, debouncedCohort]);
+  // Filter profiles when search term changes
+  useEffect(() => {
+    const filtered = allProfiles.filter((profile) => {
+      const searchLower = searchTerm.toLowerCase();
 
+      return (
+        profile.full_name?.toLowerCase().includes(searchLower) ||
+        profile.company?.toLowerCase().includes(searchLower) ||
+        profile.cohort?.toLowerCase().includes(searchLower) ||
+        profile.job_title?.toLowerCase().includes(searchLower) ||
+        profile.city?.toLowerCase().includes(searchLower) ||
+        profile.country?.toLowerCase().includes(searchLower)
+      );
+    });
 
+    setFilteredProfiles(filtered);
+  }, [searchTerm, allProfiles]);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-6 text-[#0C314C]">
+          Alumni Directory
+        </h1>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading alumni profiles...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-6 text-[#0C314C]">
+          Alumni Directory
+        </h1>
+        <div className="text-center py-12">
+          <p className="text-red-500 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="text-primary hover:underline"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6 text-[#0C314C]">Alumni Directory</h1>
-      <p className="text-muted-foreground mb-8">
-        Search for users by name, company, or cohort. Only public profiles are shown.
+      <h1 className="text-3xl font-bold mb-6 text-[#0C314C]">
+        Alumni Directory
+      </h1>
+
+      <p className="text-muted-foreground mb-6">
+        Browse and search through our alumni community. Only public profiles are
+        shown.
       </p>
 
-       <div className="mb-6">
-         <div className="grid gap-4 md:grid-cols-3">
-           <Input
-             placeholder="Search by name..."
-             value={nameQuery}
-             onChange={(e) => setNameQuery(e.target.value)}
-           />
-           <Input
-             placeholder="Search by company..."
-             value={companyQuery}
-             onChange={(e) => setCompanyQuery(e.target.value)}
-           />
-           <Input
-             placeholder="Search by cohort..."
-             value={cohortQuery}
-             onChange={(e) => setCohortQuery(e.target.value)}
-           />
-         </div>
-       </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {results.map((profile) => (
-          <Card key={profile.id}>
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                {profile.avatar_url && (
-                  <img
-                    src={profile.avatar_url}
-                    alt={`${profile.full_name || "User"} avatar`}
-                    className="w-16 h-16 rounded-full object-cover"
-                  />
-                )}
-                <div>
-                   <CardTitle className="flex items-center gap-2">
-                     {profile.full_name || "Anonymous"}
-                     {profile.graduation_year && (
-                       <Badge variant="secondary">{profile.graduation_year}</Badge>
-                     )}
-                     {profile.msc && (
-                       <Badge variant="outline">MSc</Badge>
-                     )}
-                     {profile.user_type && profile.user_type !== 'Staff' && (
-                       <Badge variant={profile.user_type === 'Admin' ? 'destructive' : 'default'}>{profile.user_type}</Badge>
-                     )}
-                   </CardTitle>
-                </div>
-              </div>
-              <CardDescription>
-                {profile.job_title && <div>{profile.job_title}</div>}
-                {profile.company && <div>{profile.company}</div>}
-                {(profile.city || profile.country) && (
-                  <div>
-                    {profile.city && `${profile.city}, `}
-                    {profile.country}
-                  </div>
-                )}
-                {profile.email_visible && profile.email && <div>{profile.email}</div>}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {profile.bio && <p className="text-sm mb-3">{profile.bio}</p>}
-              {(profile.github_url || profile.linkedin_url || profile.twitter_url || profile.website_url) && (
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {profile.github_url && (
-                    <a href={profile.github_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-                      <Github className="h-3 w-3" />
-                      GitHub
-                    </a>
-                  )}
-                  {profile.linkedin_url && (
-                    <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-                      <Linkedin className="h-3 w-3" />
-                      LinkedIn
-                    </a>
-                  )}
-                  {profile.twitter_url && (
-                    <a href={profile.twitter_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-                      <Twitter className="h-3 w-3" />
-                      Twitter
-                    </a>
-                  )}
-                  {profile.website_url && (
-                    <a href={profile.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-                      <ExternalLink className="h-3 w-3" />
-                      Website
-                    </a>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+      {/* Search */}
+      <div className="relative mb-6">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <Input
+          placeholder="Search by name, company, cohort, job title, or location..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
       </div>
 
-       {loading && (
-         <p className="text-center text-muted-foreground">Searching...</p>
-       )}
-       {error && (
-         <p className="text-center text-red-500">{error}</p>
-       )}
-       {results.length === 0 && !loading && !error && (
-         <p className="text-center text-muted-foreground">No alumni found.</p>
-       )}
+      {/* Results count */}
+      <div className="mb-6">
+        <p className="text-sm text-muted-foreground">
+          Showing {filteredProfiles.length} of {allProfiles.length} alumni
+          {searchTerm && (
+            <span>
+              {" "}
+              matching "{searchTerm}"
+              <button
+                onClick={() => setSearchTerm("")}
+                className="ml-2 text-primary hover:underline"
+              >
+                Clear
+              </button>
+            </span>
+          )}
+        </p>
+      </div>
+
+      {/* Profiles Grid */}
+      {filteredProfiles.length > 0 ? (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredProfiles.map((profile) => (
+            <Card key={profile.id} className="h-full">
+              <CardHeader>
+                <div className="flex items-start gap-3">
+                  {profile.avatar_url && (
+                    <img
+                      src={profile.avatar_url}
+                      alt={`${profile.full_name || "User"} avatar`}
+                      className="w-16 h-16 rounded-full object-cover flex-shrink-0"
+                    />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="text-lg mb-2">
+                      {profile.full_name || "Anonymous"}
+                    </CardTitle>
+
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {profile.graduation_year && (
+                        <Badge variant="secondary" className="text-xs">
+                          {profile.graduation_year}
+                        </Badge>
+                      )}
+                      {profile.cohort && (
+                        <Badge variant="secondary" className="text-xs">
+                          {profile.cohort}
+                        </Badge>
+                      )}
+                      {profile.msc && (
+                        <Badge variant="outline" className="text-xs">
+                          MSc
+                        </Badge>
+                      )}
+                      {profile.user_type && profile.user_type !== "Staff" && (
+                        <Badge
+                          variant={
+                            profile.user_type === "Admin"
+                              ? "destructive"
+                              : "default"
+                          }
+                          className="text-xs"
+                        >
+                          {profile.user_type}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <CardDescription className="space-y-1">
+                  {profile.job_title && (
+                    <div className="font-medium">{profile.job_title}</div>
+                  )}
+                  {profile.company && <div>{profile.company}</div>}
+                  {(profile.city || profile.country) && (
+                    <div className="text-sm">
+                      {[profile.city, profile.country]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </div>
+                  )}
+                  {profile.email_visible && profile.email && (
+                    <div className="text-sm">{profile.email}</div>
+                  )}
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="pt-0">
+                {profile.bio && (
+                  <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                    {profile.bio}
+                  </p>
+                )}
+
+                {/* Social Links */}
+                {(profile.github_url ||
+                  profile.linkedin_url ||
+                  profile.twitter_url ||
+                  profile.website_url) && (
+                  <div className="flex flex-wrap gap-3">
+                    {profile.github_url && (
+                      <a
+                        href={profile.github_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <Github className="h-4 w-4" />
+                        <span>GitHub</span>
+                      </a>
+                    )}
+                    {profile.linkedin_url && (
+                      <a
+                        href={profile.linkedin_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <Linkedin className="h-4 w-4" />
+                        <span>LinkedIn</span>
+                      </a>
+                    )}
+                    {profile.twitter_url && (
+                      <a
+                        href={profile.twitter_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <Twitter className="h-4 w-4" />
+                        <span>Twitter</span>
+                      </a>
+                    )}
+                    {profile.website_url && (
+                      <a
+                        href={profile.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        <span>Website</span>
+                      </a>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground mb-4">
+            {searchTerm
+              ? `No alumni found matching "${searchTerm}"`
+              : "No public alumni profiles found"}
+          </p>
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              className="text-primary hover:underline"
+            >
+              Clear search to see all alumni
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };
