@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { useParams, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   CalendarIcon, 
   MapPinIcon, 
@@ -13,8 +13,11 @@ import {
   ArrowLeftIcon,
   ExternalLinkIcon,
   FileTextIcon,
-  Loader2Icon
+  Loader2Icon,
+  EditIcon,
+  Trash2Icon
 } from "lucide-react";
+import EditEventModal from "@/components/EditEventModal";
 
 // Event data interface
 interface EventData {
@@ -31,7 +34,8 @@ interface EventData {
   created_by: string;
   created_at: string;
   updated_at: string;
-  tags: string[] | null;
+  image_url: string | null;
+  tags: Array<{ id: string; name: string }> | null;
   organiser?: {
     id: string;
     full_name: string | null;
@@ -39,60 +43,68 @@ interface EventData {
   };
 }
 
-// Possible Future Features:
-// - Attendees
-// - Tags
-// - Agenda
-// - RSVPs
-// - Cancellation
-// - Add to Calendar
-
 const EventDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [event, setEvent] = useState<EventData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const fetchEvent = async () => {
+    if (!id) {
+      setError("No event ID provided");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch event with organiser profile data and tags
+      const { data, error: fetchError } = await supabase
+        .from('events')
+        .select(`
+          *,
+          organiser:organiser_profile_id (
+            id,
+            full_name,
+            email
+          ),
+          event_tags (
+            tag:tags (
+              id,
+              name
+            )
+          )
+        `)
+        .eq('id', id)
+        .single();
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      // Transform the data to match our interface
+      const transformedData = {
+        ...data,
+        image_url: (data as { image_url?: string | null }).image_url || null,
+        tags: data.event_tags?.map((et: { tag: { id: string; name: string } }) => et.tag) || null,
+      };
+
+      setEvent(transformedData);
+    } catch (err) {
+      console.error('Error fetching event:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch event');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchEvent = async () => {
-      if (!id) {
-        setError("No event ID provided");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Fetch event with organiser profile data
-        const { data, error: fetchError } = await supabase
-          .from('events')
-          .select(`
-            *,
-            organiser:organiser_profile_id (
-              id,
-              full_name,
-              email
-            )
-          `)
-          .eq('id', id)
-          .single();
-
-        if (fetchError) {
-          throw fetchError;
-        }
-
-        setEvent(data);
-      } catch (err) {
-        console.error('Error fetching event:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch event');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchEvent();
   }, [id]);
 
@@ -133,6 +145,7 @@ const EventDetail = () => {
       </div>
     );
   }
+
   const getStatus = (dateString: string) => {
     const date = new Date(dateString);
     const today = new Date();
@@ -173,12 +186,48 @@ const EventDetail = () => {
     
     // For other cases, add https://
     return `https://${url}`;
+  // Generate random Behance image for fallback
+  const getRandomImage = () => {
+    const randomId = Math.floor(Math.random() * 1000);
+    return `https://picsum.photos/seed/event${randomId}/800/400.jpg`;
+  };
+
+  const imageUrl = event.image_url || getRandomImage();
+
+  // Check if current user can edit this event
+  const canEdit = user && (event.created_by === user.id);
+
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      const { error: deleteError } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', event.id);
+
+      if (deleteError) throw deleteError;
+
+      navigate('/events');
+    } catch (err) {
+      console.error('Error deleting event:', err);
+      alert('Failed to delete event. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleEventUpdated = () => {
+    fetchEvent();
   };
 
   return (
     <div className="max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="mb-4">
         <Button 
           variant="outline" 
           size="sm" 
@@ -188,18 +237,51 @@ const EventDetail = () => {
           <ArrowLeftIcon className="w-4 h-4" />
           Back to Events
         </Button>
+      </div>
+      
+      <div className="flex items-center gap-4 mb-6">
         <div className="flex-1">
           <h1 className="text-3xl font-bold tracking-tight">{event.title}</h1>
           <p className="text-muted-foreground mt-1">Event Details</p>
         </div>
-        <Badge variant={getStatus(event.start_at) === 'upcoming' ? 'default' : 'secondary'}>
-          {getStatus(event.start_at)}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant={getStatus(event.start_at) === 'upcoming' ? 'default' : 'secondary'}>
+            {getStatus(event.start_at)}
+          </Badge>
+          {canEdit && (
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setIsEditModalOpen(true)}>
+                <EditIcon className="w-4 h-4 mr-1" />
+                Edit
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleDelete} disabled={isDeleting}>
+                <Trash2Icon className="w-4 h-4 mr-1" />
+                {isDeleting ? 'Deleting...' : 'Delete'}
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Event Image */}
+          <Card className="border-2 border-foreground shadow-none overflow-hidden">
+            <div className="aspect-video w-full overflow-hidden">
+              <img 
+                src={imageUrl} 
+                alt={event.title}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Fallback to another random image if the first one fails
+                  const target = e.target as HTMLImageElement;
+                  target.src = getRandomImage();
+                }}
+              />
+            </div>
+          </Card>
+
           {/* Event Info Card */}
           <Card className="border-2 border-foreground shadow-none">
             <CardHeader>
@@ -267,9 +349,9 @@ const EventDetail = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
-                  {event.tags.map((tag, index) => (
+                  {event.tags?.map((tag, index) => (
                     <Badge key={index} variant="secondary" className="text-xs">
-                      {tag}
+                      {tag.name}
                     </Badge>
                   ))}
                 </div>
@@ -326,6 +408,16 @@ const EventDetail = () => {
 
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {isEditModalOpen && (
+        <EditEventModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onSubmit={handleEventUpdated}
+          event={event}
+        />
+      )}
     </div>
   );
 };

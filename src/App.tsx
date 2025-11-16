@@ -7,7 +7,8 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-import News from "./pages/News";
+import { Announcements }  from "./pages/Announcements";
+import AnnouncementDetail from "./pages/AnnouncementDetail";
 import Map from "./pages/Map";
 import Events from "./pages/Events";
 import EventDetail from "./pages/EventDetail";
@@ -26,7 +27,8 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={<Layout><Index /></Layout>} />
-            <Route path="/news" element={<Layout><News /></Layout>} />
+            <Route path="/announcements" element={<Layout><Announcements /></Layout>} />
+            <Route path="/announcements/:id" element={<Layout><AnnouncementDetail /></Layout>} />
             <Route path="/map" element={<Layout><Map /></Layout>} />
             <Route path="/events" element={<Layout><Events /></Layout>} />
             <Route path="/events/:id" element={<Layout><EventDetail /></Layout>} />

@@ -6,6 +6,7 @@ import { Map, Marker, Popup, Source, Layer } from 'react-map-gl';
 import { MapPinIcon, UsersIcon, BuildingIcon, Loader2Icon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+<<<<<<< karl/user-map
 // Alumni data interface
 interface AlumniData {
   id: string;
@@ -151,6 +152,20 @@ const MapPage = () => {
           <div className="text-center">
             <p className="text-red-600 mb-4">Error loading alumni data</p>
             <p className="text-muted-foreground">{error}</p>
+=======
+const Map = () => {
+  return (
+    <div>
+      <h1 className="text-2xl tracking-tight mb-6 ">MAP</h1>
+
+      <Card className="border-2 border-foreground shadow-none">
+        <CardHeader className="pb-2">
+          <CardTitle className="tracking-tight">Alumni Locations</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="aspect-[16/9] w-full border-2 border-dashed border-foreground grid place-items-center">
+            <span className="text-xs">Map placeholder</span>
+>>>>>>> main
           </div>
         </div>
       </div>

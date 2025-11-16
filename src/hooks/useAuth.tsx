@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (!activeSession) return;
       const u = activeSession.user;
       if (!u) return;
-      const fullName = (u.user_metadata as any)?.full_name ?? null;
+      const fullName = (u.user_metadata as Record<string, unknown>)?.full_name as string | null ?? null;
       await supabase
         .from('profiles')
         .upsert(
@@ -43,8 +43,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             user_id: u.id,
             email: u.email ?? null,
             full_name: fullName,
-          } as any,
-          { onConflict: 'user_id' } as any
+          },
+          { onConflict: 'user_id' }
         );
     } catch (_) {
       // no-op: avoid blocking auth flow
@@ -52,89 +52,46 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, newSession) => {
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        setLoading(false);
-        await ensureProfileForSession(newSession);
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
-      await ensureProfileForSession(session);
+      setLoading(false); // Always set loading to false after first check
+
+      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+        ensureProfileForSession(session);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string): Promise<{ error?: string }> => {
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        return { error: error.message };
-      }
-
-      return {};
-    } catch (error) {
-      return { error: 'An unexpected error occurred' };
-    }
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { error: error?.message };
   };
 
   const signUp = async (email: string, password: string, fullName?: string): Promise<{ error?: string }> => {
-    try {
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            full_name: fullName || email.split('@')[0],
-          }
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+        data: {
+          full_name: fullName || email.split('@')[0],
         }
-      });
-
-      if (error) {
-        return { error: error.message };
       }
-      // If a session is created immediately, ensure profile is present.
-      const { data: sessionData } = await supabase.auth.getSession();
-      await ensureProfileForSession(sessionData.session ?? null);
-      return {};
-    } catch (error) {
-      return { error: 'An unexpected error occurred' };
-    }
+    });
+    return { error: error?.message };
   };
 
   const signOut = async (): Promise<void> => {
-    try {
-      setLoading(true);
-      await supabase.auth.signOut();
-      // Clear local storage and cookies
-      localStorage.clear();
-      // Clear all cookies
-      document.cookie.split(";").forEach((c) => {
-        document.cookie = c
-          .replace(/^ +/, "")
-          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-      });
-    } finally {
-      // Ensure UI updates immediately regardless of event timing
-      setSession(null);
-      setUser(null);
-      setLoading(false);
-    }
+    // Let onAuthStateChange handle the state updates
+    await supabase.auth.signOut();
   };
 
   const value = {
