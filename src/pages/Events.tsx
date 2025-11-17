@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { CalendarIcon, MapPinIcon, Loader2Icon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -66,7 +66,7 @@ const Events = () => {
   const [sortBy, setSortBy] = useState<'date' | 'title'>('date');
   const [selectedTag, setSelectedTag] = useState<string>('');
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<{ user_type?: string } | null>(null);
   const [upcomingPage, setUpcomingPage] = useState(1);
   const [pastPage, setPastPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(15);
@@ -95,7 +95,7 @@ const Events = () => {
     }
   };
 
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
     // This function can be removed or replaced with a domain service later
     // For now, keeping it simple since user_type check is minimal
     if (!user) return;
@@ -115,14 +115,14 @@ const Events = () => {
     } catch (err) {
       log.error('Error fetching user profile:', err);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchEvents();
     if (user) {
       fetchUserProfile();
     }
-  }, [user]);
+  }, [user, fetchUserProfile]);
 
   const handleEventCreated = () => {
     fetchEvents(); // Refresh events list

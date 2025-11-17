@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useParams, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { 
@@ -54,7 +54,7 @@ const EventDetail = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const fetchEvent = async () => {
+  const fetchEvent = useCallback(async () => {
     if (!id) {
       setError("No event ID provided");
       setLoading(false);
@@ -103,11 +103,11 @@ const EventDetail = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     fetchEvent();
-  }, [id]);
+  }, [id, fetchEvent]);
 
   // Loading state
   if (loading) {

@@ -16,7 +16,7 @@ export async function getAnnouncements(): Promise<Announcement[]> {
 
   return data.map(announcement => ({
     ...announcement,
-    image_url: (announcement as any).image_url || getRandomAnnouncementImage(),
+    image_url: (announcement as { image_url?: string | null }).image_url || getRandomAnnouncementImage(),
     type: announcement.type as 'opportunity' | 'news' | 'lecture' | 'program',
   }));
 }
@@ -35,7 +35,7 @@ export async function getAnnouncementBySlug(slug: string): Promise<Announcement 
 
   return {
     ...data,
-    image_url: (data as any).image_url || getRandomAnnouncementImage(),
+    image_url: (data as { image_url?: string | null }).image_url || getRandomAnnouncementImage(),
     type: data.type as 'opportunity' | 'news' | 'lecture' | 'program',
   };
 }
@@ -66,7 +66,7 @@ export async function createAnnouncement(announcement: NewAnnouncement, userId: 
 
   return {
     ...data,
-    image_url: (data as any).image_url || getRandomAnnouncementImage(),
+    image_url: (data as { image_url?: string | null }).image_url || getRandomAnnouncementImage(),
     type: data.type as 'opportunity' | 'news' | 'lecture' | 'program',
   };
 }
