@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { supabase } from '@/integrations/supabase/client'
+import { type Announcement } from '@/lib/types'
 
 // Mock dependencies
 vi.mock('@/integrations/supabase/client', () => ({
@@ -30,6 +31,22 @@ const {
   isAnnouncementActive,
   createAnnouncement
 } = await import('../announcements')
+
+// Test fixture for announcement
+const createTestAnnouncement = (overrides: Partial<Announcement> = {}): Announcement => ({
+  id: '1',
+  title: 'Test Announcement',
+  content: 'Test content',
+  type: 'opportunity',
+  external_url: null,
+  deadline: null,
+  image_url: null,
+  created_at: '2024-01-15T10:00:00Z',
+  updated_at: '2024-01-15T10:00:00Z',
+  created_by: 'user-1',
+  slug: 'test-announcement',
+  ...overrides
+})
 
 describe('Announcements domain functions', () => {
   beforeEach(() => {
@@ -233,11 +250,9 @@ describe('Announcements domain functions', () => {
 
   describe('isAnnouncementExpired', () => {
     it('should return true for announcements with past deadline', () => {
-      const announcement = {
-        id: '1',
-        title: 'Test',
+      const announcement = createTestAnnouncement({
         deadline: '2024-01-01T00:00:00Z'
-      } as any
+      })
 
       // Mock current date to be after deadline
       vi.setSystemTime(new Date('2024-01-15T00:00:00Z'))
@@ -246,11 +261,9 @@ describe('Announcements domain functions', () => {
     })
 
     it('should return false for announcements with future deadline', () => {
-      const announcement = {
-        id: '1',
-        title: 'Test',
+      const announcement = createTestAnnouncement({
         deadline: '2024-12-31T23:59:59Z'
-      } as any
+      })
 
       // Mock current date to be before deadline
       vi.setSystemTime(new Date('2024-01-15T00:00:00Z'))
@@ -259,21 +272,17 @@ describe('Announcements domain functions', () => {
     })
 
     it('should return false for announcements without deadline', () => {
-      const announcement = {
-        id: '1',
-        title: 'Test'
-        // No deadline field
-      } as any
+      const announcement = createTestAnnouncement({
+        deadline: undefined
+      })
 
       expect(isAnnouncementExpired(announcement)).toBe(false)
     })
 
     it('should handle edge case of current time exactly at deadline', () => {
-      const announcement = {
-        id: '1',
-        title: 'Test',
+      const announcement = createTestAnnouncement({
         deadline: '2024-01-15T12:00:00Z'
-      } as any
+      })
 
       // Mock current date to be exactly at deadline
       vi.setSystemTime(new Date('2024-01-15T12:00:01Z'))
@@ -284,11 +293,9 @@ describe('Announcements domain functions', () => {
 
   describe('isAnnouncementActive', () => {
     it('should return true for non-expired announcements', () => {
-      const announcement = {
-        id: '1',
-        title: 'Test',
+      const announcement = createTestAnnouncement({
         deadline: '2024-12-31T23:59:59Z'
-      } as any
+      })
 
       vi.setSystemTime(new Date('2024-01-15T00:00:00Z'))
 
@@ -296,11 +303,9 @@ describe('Announcements domain functions', () => {
     })
 
     it('should return false for expired announcements', () => {
-      const announcement = {
-        id: '1',
-        title: 'Test',
+      const announcement = createTestAnnouncement({
         deadline: '2024-01-01T00:00:00Z'
-      } as any
+      })
 
       vi.setSystemTime(new Date('2024-01-15T00:00:00Z'))
 
@@ -308,11 +313,9 @@ describe('Announcements domain functions', () => {
     })
 
     it('should return true for announcements without deadline', () => {
-      const announcement = {
-        id: '1',
-        title: 'Test'
-        // No deadline field
-      } as any
+      const announcement = createTestAnnouncement({
+        deadline: undefined
+      })
 
       expect(isAnnouncementActive(announcement)).toBe(true)
     })

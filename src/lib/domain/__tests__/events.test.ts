@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { type EventData } from '@/lib/types'
 
 // Mock dependencies
 vi.mock('@/integrations/supabase/client', () => ({
@@ -31,6 +32,25 @@ const {
   isEventUpcoming,
   isEventOngoing
 } = await import('../events')
+
+// Test fixture for event
+const createTestEvent = (overrides: Partial<EventData> = {}): EventData => ({
+  id: '1',
+  title: 'Test Event',
+  description: 'Test description',
+  start_at: '2024-02-15T10:00:00Z',
+  end_at: '2024-02-15T12:00:00Z',
+  location: 'Test Location',
+  location_url: null,
+  registration_url: null,
+  slug: 'test-event',
+  organiser_profile_id: null,
+  created_by: 'user-1',
+  created_at: '2024-01-15T10:00:00Z',
+  updated_at: '2024-01-15T10:00:00Z',
+  image_url: null,
+  ...overrides
+})
 
 describe('Events domain functions', () => {
   beforeEach(() => {
@@ -269,11 +289,9 @@ describe('Events domain functions', () => {
 
   describe('isEventInPast', () => {
     it('should return true for events that have ended', () => {
-      const event = {
-        id: 1,
-        title: 'Past Event',
+      const event = createTestEvent({
         end_at: '2024-01-01T00:00:00Z'
-      } as any
+      })
 
       vi.setSystemTime(new Date('2024-01-15T00:00:00Z'))
 
@@ -281,11 +299,9 @@ describe('Events domain functions', () => {
     })
 
     it('should return false for events that have not ended', () => {
-      const event = {
-        id: 1,
-        title: 'Future Event',
+      const event = createTestEvent({
         end_at: '2024-12-31T23:59:59Z'
-      } as any
+      })
 
       vi.setSystemTime(new Date('2024-01-15T00:00:00Z'))
 
@@ -293,11 +309,9 @@ describe('Events domain functions', () => {
     })
 
     it('should handle edge case of current time exactly at end time', () => {
-      const event = {
-        id: 1,
-        title: 'Ending Now',
+      const event = createTestEvent({
         end_at: '2024-01-15T12:00:00Z'
-      } as any
+      })
 
       vi.setSystemTime(new Date('2024-01-15T12:00:01Z'))
 
@@ -307,11 +321,9 @@ describe('Events domain functions', () => {
 
   describe('isEventUpcoming', () => {
     it('should return true for events that have not started', () => {
-      const event = {
-        id: 1,
-        title: 'Future Event',
+      const event = createTestEvent({
         start_at: '2024-12-31T23:59:59Z'
-      } as any
+      })
 
       vi.setSystemTime(new Date('2024-01-15T00:00:00Z'))
 
@@ -319,11 +331,9 @@ describe('Events domain functions', () => {
     })
 
     it('should return false for events that have started', () => {
-      const event = {
-        id: 1,
-        title: 'Past Event',
+      const event = createTestEvent({
         start_at: '2024-01-01T00:00:00Z'
-      } as any
+      })
 
       vi.setSystemTime(new Date('2024-01-15T00:00:00Z'))
 
@@ -331,11 +341,9 @@ describe('Events domain functions', () => {
     })
 
     it('should handle edge case of current time exactly at start time', () => {
-      const event = {
-        id: 1,
-        title: 'Starting Now',
+      const event = createTestEvent({
         start_at: '2024-01-15T12:00:00Z'
-      } as any
+      })
 
       vi.setSystemTime(new Date('2024-01-15T12:00:01Z'))
 
@@ -345,12 +353,10 @@ describe('Events domain functions', () => {
 
   describe('isEventOngoing', () => {
     it('should return true for events currently in progress', () => {
-      const event = {
-        id: 1,
-        title: 'Ongoing Event',
+      const event = createTestEvent({
         start_at: '2024-01-10T00:00:00Z',
         end_at: '2024-01-20T00:00:00Z'
-      } as any
+      })
 
       vi.setSystemTime(new Date('2024-01-15T00:00:00Z'))
 
@@ -358,12 +364,10 @@ describe('Events domain functions', () => {
     })
 
     it('should return false for events that have not started', () => {
-      const event = {
-        id: 1,
-        title: 'Future Event',
+      const event = createTestEvent({
         start_at: '2024-12-31T23:59:59Z',
         end_at: '2025-01-01T00:00:00Z'
-      } as any
+      })
 
       vi.setSystemTime(new Date('2024-01-15T00:00:00Z'))
 
@@ -371,12 +375,10 @@ describe('Events domain functions', () => {
     })
 
     it('should return false for events that have ended', () => {
-      const event = {
-        id: 1,
-        title: 'Past Event',
+      const event = createTestEvent({
         start_at: '2024-01-01T00:00:00Z',
         end_at: '2024-01-10T00:00:00Z'
-      } as any
+      })
 
       vi.setSystemTime(new Date('2024-01-15T00:00:00Z'))
 
@@ -384,12 +386,10 @@ describe('Events domain functions', () => {
     })
 
     it('should handle edge case of event starting exactly now', () => {
-      const event = {
-        id: 1,
-        title: 'Starting Now',
+      const event = createTestEvent({
         start_at: '2024-01-15T12:00:00Z',
         end_at: '2024-01-15T13:00:00Z'
-      } as any
+      })
 
       vi.setSystemTime(new Date('2024-01-15T12:00:00Z'))
 
@@ -397,12 +397,10 @@ describe('Events domain functions', () => {
     })
 
     it('should handle edge case of event ending exactly now', () => {
-      const event = {
-        id: 1,
-        title: 'Ending Now',
+      const event = createTestEvent({
         start_at: '2024-01-15T11:00:00Z',
         end_at: '2024-01-15T12:00:00Z'
-      } as any
+      })
 
       vi.setSystemTime(new Date('2024-01-15T12:00:00Z'))
 

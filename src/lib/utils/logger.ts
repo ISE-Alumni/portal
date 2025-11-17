@@ -27,16 +27,16 @@ export const logger = pino(loggerConfig);
 
 // Export convenience methods that match console API
 export const log = {
-  debug: (message: string, ...args: any[]) => {
+  debug: (message: string, ...args: unknown[]) => {
     logger.debug({ args }, message);
   },
-  info: (message: string, ...args: any[]) => {
+  info: (message: string, ...args: unknown[]) => {
     logger.info({ args }, message);
   },
-  warn: (message: string, ...args: any[]) => {
+  warn: (message: string, ...args: unknown[]) => {
     logger.warn({ args }, message);
   },
-  error: (message: string, error?: Error | unknown, ...args: any[]) => {
+  error: (message: string, error?: Error | unknown, ...args: unknown[]) => {
     if (error instanceof Error) {
       logger.error({ error, args }, message);
     } else {

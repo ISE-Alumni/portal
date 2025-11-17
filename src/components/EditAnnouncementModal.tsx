@@ -178,7 +178,7 @@ const EditAnnouncementModal = ({ isOpen, onClose, onSubmit, onDelete, announceme
             <select
               id="type"
               value={type}
-              onChange={(e) => setType(e.target.value as any)}
+              onChange={(e) => setType(e.target.value as 'opportunity' | 'news' | 'lecture' | 'program')}
               className="w-full p-2 border rounded-md"
               disabled={isUpdating || isDeleting}
             >

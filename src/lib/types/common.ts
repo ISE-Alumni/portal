@@ -21,5 +21,5 @@ export type SortOption<T> = {
 
 export type FilterOption<T> = {
   field: keyof T;
-  value: any;
+  value: unknown;
 };

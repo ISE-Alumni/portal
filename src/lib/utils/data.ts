@@ -48,12 +48,14 @@ export function filterData<T>(
 
     // Tags filter (for events and announcements)
     if (filters.tags && filters.tags.length > 0) {
-      const itemTags = (item as any).tags;
+      const itemTags = (item as { tags?: unknown[] }).tags;
       if (!itemTags || !Array.isArray(itemTags)) return false;
       
       const hasMatchingTag = filters.tags.some(tag => 
-        itemTags.some((itemTag: any) => 
-          typeof itemTag === 'object' ? itemTag.name === tag : itemTag === tag
+        itemTags.some((itemTag: unknown) => 
+          typeof itemTag === 'object' && itemTag !== null && 'name' in itemTag 
+            ? (itemTag as { name: string }).name === tag 
+            : itemTag === tag
         )
       );
       if (!hasMatchingTag) return false;
@@ -61,19 +63,19 @@ export function filterData<T>(
 
     // Cohort filter (for profiles)
     if (filters.cohort !== undefined) {
-      const itemCohort = (item as any).cohort;
+      const itemCohort = (item as { cohort?: number }).cohort;
       if (itemCohort !== filters.cohort) return false;
     }
 
     // User type filter (for profiles)
     if (filters.userType) {
-      const itemType = (item as any).user_type;
+      const itemType = (item as { user_type?: string }).user_type;
       if (itemType !== filters.userType) return false;
     }
 
     // Date range filter
     if (filters.dateFrom || filters.dateTo) {
-      const itemDate = new Date((item as any).date || (item as any).created_at);
+      const itemDate = new Date((item as { date?: string; created_at?: string }).date || (item as { created_at?: string }).created_at);
       if (filters.dateFrom && itemDate < filters.dateFrom) return false;
       if (filters.dateTo && itemDate > filters.dateTo) return false;
     }

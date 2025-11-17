@@ -14,10 +14,34 @@ import { DateRange } from "react-day-picker";
 import { log } from '@/lib/utils/logger';
 import { getAnnouncementTypesSync, getEventTagsSync, isValidEventTag, getEventTagOptions } from '@/lib/constants';
 
+interface EventData {
+  title: string;
+  slug: string;
+  description: string | null;
+  location: string | null;
+  location_url: string | null;
+  start_at: string;
+  end_at: string | null;
+  organiser_profile_id: string | null;
+  created_by: string;
+  image_url: string | null;
+  tags: string[];
+}
+
+interface AnnouncementData {
+  title: string;
+  content: string | null;
+  type: string;
+  external_url: string | null;
+  deadline: string | null;
+  image_url: string | null;
+  created_by: string;
+}
+
 interface NewEventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: EventData | AnnouncementData) => void;
   mode: 'event' | 'announcement';
 }
 
@@ -68,7 +92,7 @@ const NewEventModal = ({ isOpen, onClose, onSubmit, mode }: NewEventModalProps) 
       setIsCreating(true);
       setError(null);
 
-      let data: any;
+      let data: EventData | AnnouncementData;
 
       if (mode === 'event') {
         // Combine date and time for start_at

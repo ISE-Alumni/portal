@@ -22,7 +22,7 @@ export async function getEvents(): Promise<EventData[]> {
 
   return data.map(event => ({
     ...event,
-    image_url: (event as any).image_url || getRandomEventImage(),
+    image_url: (event as { image_url?: string | null }).image_url || getRandomEventImage(),
   }));
 }
 
@@ -46,7 +46,7 @@ export async function getEventBySlug(slug: string): Promise<EventData | null> {
 
   return {
     ...data,
-    image_url: (data as any).image_url || getRandomEventImage(),
+    image_url: (data as { image_url?: string | null }).image_url || getRandomEventImage(),
   };
 }
 

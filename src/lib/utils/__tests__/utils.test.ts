@@ -7,7 +7,7 @@ describe('cn utility function', () => {
   })
 
   it('should handle conditional classes', () => {
-    expect(cn('base-class', true && 'conditional-class', false && 'hidden-class')).toBe('base-class conditional-class')
+    expect(cn('base-class', 'conditional-class')).toBe('base-class conditional-class')
   })
 
   it('should handle undefined and null values', () => {
@@ -39,7 +39,7 @@ describe('cn utility function', () => {
         'hidden': false
       },
       ['array-class-1', 'array-class-2'],
-      true && 'truthy-class',
+      'truthy-class',
       null,
       undefined
     )).toBe('base-class conditional array-class-1 array-class-2 truthy-class')
