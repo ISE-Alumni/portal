@@ -27,7 +27,7 @@ const AnnouncementCard = ({ announcement }: { announcement: Announcement }) => {
   const imageUrl = announcement.image_url || getRandomAnnouncementImage();
 
   return (
-    <Card className="w-full hover:shadow-lg transition-shadow duration-200 overflow-hidden cursor-pointer" onClick={handleViewDetails}>
+    <Card className="w-full hover:shadow-lg transition-shadow duration-200 overflow-hidden">
       <div className="aspect-video w-full overflow-hidden">
         <img 
           src={imageUrl} 
@@ -66,16 +66,17 @@ const AnnouncementCard = ({ announcement }: { announcement: Announcement }) => {
         <CardDescription className="text-base">
           {announcement.content}
         </CardDescription>
-        {announcement.external_url && (
-          <div className="mt-4">
-            <Button variant="outline" asChild onClick={(e) => e.stopPropagation()}>
+        <div className="mt-4 space-y-2">
+          <Button className="w-full" onClick={handleViewDetails}>Details</Button>
+          {announcement.external_url && (
+            <Button variant="outline" className="w-full" asChild>
               <a href={announcement.external_url} target="_blank" rel="noopener noreferrer">
                 <ExternalLink className="w-4 h-4 mr-2" />
                 Learn More
               </a>
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </CardContent>
     </Card>
   );
