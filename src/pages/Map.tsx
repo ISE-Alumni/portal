@@ -2,13 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Map = () => {
   return (
-    <div>
-      <h1 className="text-2xl tracking-tight mb-6 ">MAP</h1>
+    <div className="container mx-auto py-8 px-4 sm:px-0">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-6">Map</h1>
 
-      <Card className="border-2 border-foreground shadow-none">
-        <CardHeader className="pb-2">
-          <CardTitle className="tracking-tight">Alumni Locations</CardTitle>
-        </CardHeader>
+      <Card className="border-none shadow-none">
         <CardContent>
           <div className="aspect-[16/9] w-full border-2 border-dashed border-foreground grid place-items-center">
             <span className="text-xs">Map placeholder</span>
