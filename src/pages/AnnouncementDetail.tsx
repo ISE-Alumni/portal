@@ -75,14 +75,15 @@ const AnnouncementDetail = () => {
           organiser:organiser_profile_id (
             id,
             full_name,
-            email
+            email,
+            email_visible
           ),
           announcement_tags!inner(
             tag_id,
               tags!inner(
                 id,
-                name,
-                color
+                  name,
+                  color
               )
             )
           )
