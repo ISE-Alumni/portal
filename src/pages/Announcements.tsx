@@ -7,14 +7,15 @@ import { useAuth } from '@/hooks/useAuth';
 import { ExternalLink, Clock, MegaphoneIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import NewEventModal from '@/components/NewEventModal';
-import { Announcement, NewAnnouncement } from '@/lib/types';
+import { Announcement, NewAnnouncement, type Tag } from '@/lib/types';
 import { getAnnouncements, createAnnouncement } from '@/lib/domain/announcements';
 import { formatDateShort, isDateInPast, isDateWithinLastDays } from '@/lib/utils/date';
 import { getRandomAnnouncementImage } from '@/lib/utils/images';
-import { getAnnouncementTypeColor, getAnnouncementTypeLabel } from '@/lib/utils/ui';
 import { filterAnnouncements, sortAnnouncements, type SortOption } from '@/lib/utils/data';
 import { log } from '@/lib/utils/logger';
-import { canUserCreateContent, getAnnouncementTypesSync } from '@/lib/constants';
+import { canUserCreateContent } from '@/lib/constants';
+import { getTags } from '@/lib/domain';
+import { getEventTagColorClass } from '@/lib/utils/ui';
 
 // Announcement Card Component
 const AnnouncementCard = ({ announcement }: { announcement: Announcement }) => {
@@ -45,9 +46,19 @@ const AnnouncementCard = ({ announcement }: { announcement: Announcement }) => {
           <div className="flex-1">
             <CardTitle className="text-lg sm:text-xl leading-tight">{announcement.title}</CardTitle>
             <div className="flex flex-wrap items-center gap-2 mt-2">
-              <Badge className={getAnnouncementTypeColor(announcement.type)}>
-                {getAnnouncementTypeLabel(announcement.type)}
-              </Badge>
+              {announcement.tags?.map((tag, index) => (
+                <Badge 
+                  key={index} 
+                  style={{ 
+                    backgroundColor: tag.color + '20',
+                    borderColor: tag.color,
+                    color: tag.color 
+                  }}
+                  className="text-xs"
+                >
+                  {tag.name}
+                </Badge>
+              ))}
               {announcement.deadline && (
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Clock className="w-4 h-4 mr-1" />
@@ -89,7 +100,8 @@ export const Announcements = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sortBy, setSortBy] = useState<'created_at' | 'deadline' | 'title'>('created_at');
-  const [selectedType, setSelectedType] = useState<string>('');
+  const [selectedTag, setSelectedTag] = useState<string>('');
+  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [announcementView, setAnnouncementView] = useState<'current' | 'past'>('current');
   const [userProfile, setUserProfile] = useState<{ user_type: string } | null>(null);
   
@@ -113,13 +125,19 @@ export const Announcements = () => {
   useEffect(() => {
     fetchAnnouncements();
     fetchUserProfile();
+    fetchTags();
   }, [fetchUserProfile]);
+
+  const fetchTags = async () => {
+    const tagsData = await getTags();
+    setAvailableTags(tagsData);
+  };
 
   useEffect(() => {
     // Apply filtering and sorting when dependencies change
     const filters = {
-      // Add type filter when selectedType is not empty
-      ...(selectedType && { tags: [selectedType] })
+      // Add tag filter when selectedTag is not empty
+      ...(selectedTag && { tags: [selectedTag] })
     };
 
     const sortOption: SortOption = {
@@ -131,7 +149,7 @@ export const Announcements = () => {
     const sorted = sortAnnouncements(filtered, sortOption);
 
     setFilteredAnnouncements(sorted);
-  }, [announcements, selectedType, sortBy]);
+  }, [announcements, selectedTag, sortBy]);
 
    // Separate current/upcoming from past announcements
    const currentAnnouncements = filteredAnnouncements.filter(announcement => {
@@ -183,7 +201,7 @@ export const Announcements = () => {
    useEffect(() => {
      setUpcomingPage(1);
      setPastPage(1);
-   }, [selectedType, sortBy]);
+   }, [selectedTag, sortBy]);
 
    const fetchAnnouncements = async () => {
     const data = await getAnnouncements();
@@ -192,13 +210,23 @@ export const Announcements = () => {
     setLoading(false);
   };
 
-  const handleCreateAnnouncement = async (announcement: NewAnnouncement) => {
+  const handleCreateAnnouncement = async (data: any) => {
     if (!user) return;
 
-    const data = await createAnnouncement(announcement, user.id);
+    // Convert AnnouncementData to NewAnnouncement format
+    const announcement: NewAnnouncement = {
+      title: data.title,
+      content: data.content,
+      external_url: data.external_url,
+      deadline: data.deadline,
+      image_url: data.image_url,
+      tag_ids: data.tag_ids,
+    };
+
+    const result = await createAnnouncement(announcement, user.id);
     
-    if (data) {
-      log.info('Announcement created:', data);
+    if (result) {
+      log.info('Announcement created:', result);
       setIsModalOpen(false);
       fetchAnnouncements(); // Refresh announcements list
     } else {
@@ -237,16 +265,14 @@ export const Announcements = () => {
              <option value="title">Sort by Title</option>
            </select>
            <select
-             value={selectedType}
-             onChange={(e) => setSelectedType(e.target.value)}
-             className="px-3 py-2 border rounded-md text-sm w-full sm:w-auto"
+           value={selectedTag}
+           onChange={(e) => setSelectedTag(e.target.value)}
+           className="px-3 py-2 border rounded-md text-sm w-full sm:w-auto"
            >
-              <option value="">All Types</option>
-              {getAnnouncementTypesSync().map(type => (
-                <option key={type} value={type}>
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
-                </option>
-              ))}
+           <option value="">All Tags</option>
+           {availableTags.map(tag => (
+           <option key={tag.id} value={tag.name}>{tag.name}</option>
+           ))}
            </select>
            <select
              value={itemsPerPage}

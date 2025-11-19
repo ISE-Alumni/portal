@@ -18,6 +18,7 @@ import {
   Trash2Icon
 } from "lucide-react";
 import EditAnnouncementModal from "@/components/EditAnnouncementModal";
+import { getAnnouncementBySlug } from '@/lib/domain/announcements';
 import { log } from '@/lib/utils/logger';
 
 // Announcement data interface
@@ -25,18 +26,16 @@ interface AnnouncementData {
   id: string;
   title: string;
   content: string | null;
-  type: 'opportunity' | 'news' | 'lecture' | 'program';
+  type?: string;
   external_url: string | null;
   deadline: string | null;
   image_url: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;
-  creator?: {
-    id: string;
-    full_name: string | null;
-    email: string | null;
-  };
+  slug: string | null;
+  tags?: Array<{ id: string; name: string; color: string }>;
+  creator?: any;
 }
 
 const AnnouncementDetail = () => {
@@ -51,36 +50,17 @@ const AnnouncementDetail = () => {
 
   useEffect(() => {
     const fetchAnnouncement = async () => {
-      if (!id) {
-        setError("No announcement ID provided");
-        setLoading(false);
-        return;
-      }
-
       try {
         setLoading(true);
         setError(null);
 
-        // Fetch announcement data
-        const { data, error: fetchError } = await supabase
-          .from('announcements')
-          .select('*')
-          .eq('id', id)
-          .single();
+        const data = await getAnnouncementBySlug(id);
 
-        if (fetchError) {
-          throw fetchError;
+        if (!data) {
+          throw new Error('Announcement not found');
         }
 
-        // Transform the data to match our interface
-        const transformedData = {
-          ...data,
-          image_url: (data as { image_url?: string | null }).image_url || null,
-          type: data.type as 'opportunity' | 'news' | 'lecture' | 'program',
-          creator: null, // We'll fetch this separately if needed
-        };
-
-        setAnnouncement(transformedData);
+        setAnnouncement(data as any);
       } catch (err) {
         log.error('Error fetching announcement:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch announcement');
@@ -147,35 +127,7 @@ const AnnouncementDetail = () => {
     });
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'opportunity':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'news':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'lecture':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'program':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
 
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case 'opportunity':
-        return 'Opportunity';
-      case 'news':
-        return 'News';
-      case 'lecture':
-        return 'Guest Lecture';
-      case 'program':
-        return 'Program';
-      default:
-        return type;
-    }
-  };
 
   // Generate random Behance image for fallback
   const getRandomImage = () => {
@@ -237,9 +189,6 @@ const AnnouncementDetail = () => {
           <p className="text-muted-foreground mt-1">Announcement Details</p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge className={getTypeColor(announcement.type)}>
-            {getTypeLabel(announcement.type)}
-          </Badge>
           <Badge variant={getStatus(announcement.deadline) === 'active' ? 'default' : 'secondary'}>
             {getStatus(announcement.deadline)}
           </Badge>
@@ -344,6 +293,36 @@ const AnnouncementDetail = () => {
             </CardContent>
           </Card>
 
+          {/* Tags Section */}
+          {announcement.tags && announcement.tags.length > 0 && (
+            <Card className="border-2 border-foreground shadow-none">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileTextIcon className="w-5 h-5" />
+                  Tags
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {announcement.tags?.map((tag, index) => (
+                    <Badge 
+                      key={index} 
+                      variant="secondary" 
+                      className="text-xs"
+                      style={{ 
+                        backgroundColor: tag.color + '20',
+                        borderColor: tag.color,
+                        color: tag.color 
+                      }}
+                    >
+                      {tag.name}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Creator Info */}
           <Card className="border-2 border-foreground shadow-none">
             <CardHeader>
@@ -371,7 +350,7 @@ const AnnouncementDetail = () => {
           onClose={() => setIsEditModalOpen(false)}
           onSubmit={handleAnnouncementUpdated}
           onDelete={handleDelete}
-          announcement={announcement}
+          announcement={announcement as any}
         />
       )}
     </div>

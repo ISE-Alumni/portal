@@ -100,46 +100,6 @@ describe('Constants functions', () => {
     })
   })
 
-  describe('getAnnouncementTypes', () => {
-    it('should fetch announcement types from database successfully', async () => {
-      const mockData = [
-        { type: 'opportunity' },
-        { type: 'news' },
-        { type: 'lecture' },
-        { type: 'program' },
-        { type: 'opportunity' } // Duplicate to test uniqueness
-      ]
-      const mockNot = vi.fn().mockReturnValue({
-        data: mockData,
-        error: null
-      })
-      const mockSelect = vi.fn().mockReturnValue({ not: mockNot })
-
-      mockedSupabase.from.mockReturnValue({ select: mockSelect })
-
-      const { getAnnouncementTypes } = await import('../index')
-      const result = await getAnnouncementTypes()
-
-      expect(mockedSupabase.from).toHaveBeenCalledWith('announcements')
-      expect(mockSelect).toHaveBeenCalledWith('type')
-      expect(result).toEqual(['opportunity', 'news', 'lecture', 'program'])
-    })
-
-    it('should return fallback types when database returns empty', async () => {
-      const mockNot = vi.fn().mockReturnValue({
-        data: [],
-        error: null
-      })
-      const mockSelect = vi.fn().mockReturnValue({ not: mockNot })
-
-      mockedSupabase.from.mockReturnValue({ select: mockSelect })
-
-      const { getAnnouncementTypes } = await import('../index')
-      const result = await getAnnouncementTypes()
-
-      expect(result).toEqual(['opportunity', 'news', 'lecture', 'program'])
-    })
-
     it('should handle database errors gracefully', async () => {
       const mockError = new Error('Database error')
       const mockNot = vi.fn().mockReturnValue({
@@ -148,15 +108,7 @@ describe('Constants functions', () => {
       })
       const mockSelect = vi.fn().mockReturnValue({ not: mockNot })
 
-      mockedSupabase.from.mockReturnValue({ select: mockSelect })
-
-      const { getAnnouncementTypes } = await import('../index')
-      const result = await getAnnouncementTypes()
-
-      expect(mockedLog.error).toHaveBeenCalledWith('Error fetching announcement types:', mockError)
-      expect(result).toEqual(['opportunity', 'news', 'lecture', 'program'])
-    })
-  })
+   })
 
   describe('getEventTags', () => {
     it('should fetch event tags from database successfully', async () => {
@@ -291,7 +243,6 @@ describe('Constants functions', () => {
 
       // Should log errors for each failed fetch
       expect(mockedLog.error).toHaveBeenCalledWith('Error fetching user types:', mockError)
-      expect(mockedLog.error).toHaveBeenCalledWith('Error fetching announcement types:', mockError)
       expect(mockedLog.error).toHaveBeenCalledWith('Error fetching event tags:', mockError)
     })
   })
@@ -299,10 +250,9 @@ describe('Constants functions', () => {
   describe('Synchronous getters', () => {
     it('should return empty array when cache is not initialized', async () => {
       const constants = await import('../index')
-      const { getUserTypesSync, getAnnouncementTypesSync, getEventTagsSync } = constants
+      const { getUserTypesSync, getEventTagsSync } = constants
 
       expect(getUserTypesSync()).toEqual([])
-      expect(getAnnouncementTypesSync()).toEqual([])
       expect(getEventTagsSync()).toEqual([
         { name: 'Networking', color: '#10b981' },
         { name: 'Workshop', color: '#f59e0b' },
@@ -361,15 +311,7 @@ describe('Constants functions', () => {
       expect(isValidUserType('Invalid')).toBe(false)
     })
 
-    it('should validate announcement types correctly', async () => {
-      const constants = await import('../index')
-      const { isValidAnnouncementType } = constants
 
-      expect(isValidAnnouncementType('opportunity')).toBe(true)
-      expect(isValidAnnouncementType('news')).toBe(true)
-      expect(isValidAnnouncementType('lecture')).toBe(true)
-      expect(isValidAnnouncementType('invalid')).toBe(false)
-    })
 
     it('should validate event tags correctly', async () => {
       const constants = await import('../index')
@@ -457,18 +399,7 @@ describe('Constants functions', () => {
       ])
     })
 
-    it('should generate announcement type options correctly', async () => {
-      const constants = await import('../index')
-      const { getAnnouncementTypeOptions } = constants
 
-      const options = getAnnouncementTypeOptions()
-      expect(options).toEqual([
-        { value: 'opportunity', label: 'Opportunity' },
-        { value: 'news', label: 'News' },
-        { value: 'lecture', label: 'Lecture' },
-        { value: 'program', label: 'Program' }
-      ])
-    })
 
     it('should generate event tag options correctly', async () => {
       const constants = await import('../index')
@@ -501,11 +432,10 @@ describe('Constants functions', () => {
       mockedSupabase.from.mockReturnValue({ select: mockSelect })
 
       const constants = await import('../index')
-      const { initializeConstants, isValidUserType, isValidAnnouncementType, isValidEventTag } = constants
+      const { initializeConstants, isValidUserType, isValidEventTag } = constants
       await initializeConstants()
 
       expect(isValidUserType('Admin')).toBe(true) // Fallback values should be used
-      expect(isValidAnnouncementType('opportunity')).toBe(true) // Fallback values should be used
       expect(isValidEventTag('Networking')).toBe(false) // Cache set to empty array, no fallback
     })
 
@@ -533,11 +463,10 @@ describe('Constants functions', () => {
       })
 
       const constants = await import('../index')
-      const { initializeConstants, isValidUserType, isValidAnnouncementType, isValidEventTag, getEventTagColor } = constants
+      const { initializeConstants, isValidUserType, isValidEventTag, getEventTagColor } = constants
       await initializeConstants()
 
       expect(isValidUserType(null)).toBe(false)
-      expect(isValidAnnouncementType(null)).toBe(false)
       expect(isValidEventTag(null)).toBe(false)
       expect(isValidEventTag('Workshop')).toBe(true)
       expect(getEventTagColor('Workshop')).toBe('#f59e0b')
