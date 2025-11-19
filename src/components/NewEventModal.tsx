@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { log } from '@/lib/utils/logger';
-import { getAnnouncementTypesSync, getEventTagsSync, isValidEventTag, getEventTagOptions } from '@/lib/constants';
+import { getEventTagsSync, isValidEventTag, getEventTagOptions } from '@/lib/constants';
 
 interface EventData {
   title: string;
@@ -31,11 +31,11 @@ interface EventData {
 interface AnnouncementData {
   title: string;
   content: string | null;
-  type: string;
   external_url: string | null;
   deadline: string | null;
   image_url: string | null;
   created_by: string;
+  tag_ids: string[];
 }
 
 interface NewEventModalProps {
@@ -57,7 +57,7 @@ const NewEventModal = ({ isOpen, onClose, onSubmit, mode }: NewEventModalProps) 
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [type, setType] = useState<string>(getAnnouncementTypesSync()[0] || 'opportunity');
+
   const [deadline, setDeadline] = useState<string>("");
   const [externalUrl, setExternalUrl] = useState<string>("");
   const [imageUrl, setImageUrl] = useState<string>("");
@@ -167,11 +167,11 @@ const NewEventModal = ({ isOpen, onClose, onSubmit, mode }: NewEventModalProps) 
         data = {
           title: eventName,
           content: description || null,
-          type: type,
           external_url: externalUrl || null,
           deadline: deadline || null,
           image_url: imageUrl || null,
           created_by: user.id,
+          tag_ids: selectedTags,
         };
 
         const { error: insertError } = await supabase
@@ -195,7 +195,6 @@ const NewEventModal = ({ isOpen, onClose, onSubmit, mode }: NewEventModalProps) 
       setSelectedTags([]);
       setDate(undefined);
       setShowPreview(false);
-      setType(getAnnouncementTypesSync()[0] || 'opportunity');
       setDeadline("");
       setExternalUrl("");
       setImageUrl("");
@@ -243,23 +242,31 @@ const NewEventModal = ({ isOpen, onClose, onSubmit, mode }: NewEventModalProps) 
             />
           </div>
 
-          {/* Announcement Type Selection - Only show for announcements */}
+          {/* Tag Selection - Only show for announcements */}
           {mode === 'announcement' && (
             <div className="space-y-2">
-              <Label htmlFor="type" className="text-sm font-medium">Type</Label>
-              <select
-                id="type"
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="w-full p-2 border rounded-md"
-                disabled={isCreating}
-              >
-                {getAnnouncementTypesSync().map(type => (
-                  <option key={type} value={type}>
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </option>
+              <Label className="text-sm font-medium">Tags</Label>
+              <div className="flex flex-wrap gap-2">
+                {getEventTagOptions().map(tagOption => (
+                  <label key={tagOption.value} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      value={tagOption.value}
+                      checked={selectedTags.includes(tagOption.value)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedTags([...selectedTags, tagOption.value]);
+                        } else {
+                          setSelectedTags(selectedTags.filter(t => t !== tagOption.value));
+                        }
+                      }}
+                      disabled={isCreating}
+                      className="rounded"
+                    />
+                    <span className="text-sm">{tagOption.label}</span>
+                  </label>
                 ))}
-              </select>
+              </div>
             </div>
           )}
 

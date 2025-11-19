@@ -9,17 +9,20 @@ import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { log } from '@/lib/utils/logger';
-import { getAnnouncementTypesSync } from '@/lib/constants';
+import { getEventTagOptions } from '@/lib/constants';
 
 interface Announcement {
   id: string;
   title: string;
   content: string | null;
-  type: 'opportunity' | 'news' | 'lecture' | 'program';
   external_url: string | null;
   deadline: string | null;
   image_url: string | null;
   created_by: string;
+  created_at: string;
+  updated_at: string;
+  slug: string | null;
+  tags?: Array<{ id: string; name: string; color: string }>;
 }
 
 interface EditAnnouncementModalProps {
@@ -28,10 +31,10 @@ interface EditAnnouncementModalProps {
   onSubmit: (data: {
     title: string;
     content: string | null;
-    type: 'opportunity' | 'news' | 'lecture' | 'program';
     external_url: string | null;
     deadline: string | null;
     image_url: string | null;
+    tag_ids: string[];
   }) => void;
   onDelete?: () => void;
   announcement: Announcement | null;
@@ -41,7 +44,7 @@ const EditAnnouncementModal = ({ isOpen, onClose, onSubmit, onDelete, announceme
   const [content, setContent] = useState<string>("");
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [title, setTitle] = useState<string>("");
-  const [type, setType] = useState<string>(getAnnouncementTypesSync()[0] || 'opportunity');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [deadline, setDeadline] = useState<string>("");
   const [externalUrl, setExternalUrl] = useState<string>("");
   const [isUpdating, setIsUpdating] = useState(false);
@@ -55,7 +58,7 @@ const EditAnnouncementModal = ({ isOpen, onClose, onSubmit, onDelete, announceme
     if (announcement && isOpen) {
       setTitle(announcement.title);
       setContent(announcement.content || "");
-      setType(announcement.type);
+      setSelectedTags(announcement.tags?.map(tag => tag.name) || []);
       setDeadline(announcement.deadline || "");
       setExternalUrl(announcement.external_url || "");
       setImageUrl(announcement.image_url || "");
@@ -82,21 +85,43 @@ const EditAnnouncementModal = ({ isOpen, onClose, onSubmit, onDelete, announceme
       const data = {
         title: title,
         content: content || null,
-        type: type as 'opportunity' | 'news' | 'lecture' | 'program',
         external_url: externalUrl || null,
         deadline: deadline || null,
         image_url: imageUrl || null,
+        tag_ids: selectedTags,
       };
 
-      const { error: updateError } = await supabase
-        .from('announcements')
-        .update(data)
+      const { error: updateError } = await (supabase.from('announcements') as any)
+        .update({
+          title: title,
+          content: content || null,
+          external_url: externalUrl || null,
+          deadline: deadline || null,
+          image_url: imageUrl || null,
+        })
         .eq('id', announcement.id)
         .select()
         .single();
 
       if (updateError) {
         throw updateError;
+      }
+      
+      // Update tag associations
+      if (selectedTags.length > 0) {
+        // First delete existing tag associations
+        await (supabase.from('announcement_tags') as any)
+          .delete()
+          .eq('announcement_id', announcement.id);
+
+        // Then insert new tag associations
+        const tagRelations = selectedTags.map(tagName => ({
+          announcement_id: announcement.id,
+          tag_id: tagName
+        }));
+        
+        await (supabase.from('announcement_tags') as any)
+          .insert(tagRelations);
       }
       
       onSubmit(data);
@@ -120,8 +145,7 @@ const EditAnnouncementModal = ({ isOpen, onClose, onSubmit, onDelete, announceme
       setIsDeleting(true);
       setError(null);
 
-      const { error: deleteError } = await supabase
-        .from('announcements')
+      const { error: deleteError } = await (supabase.from('announcements') as any)
         .delete()
         .eq('id', announcement.id);
 
@@ -172,22 +196,30 @@ const EditAnnouncementModal = ({ isOpen, onClose, onSubmit, onDelete, announceme
             />
           </div>
 
-          {/* Type Selection */}
+          {/* Tag Selection */}
           <div className="space-y-2">
-            <Label htmlFor="type" className="text-sm font-medium">Type</Label>
-            <select
-              id="type"
-              value={type}
-              onChange={(e) => setType(e.target.value as 'opportunity' | 'news' | 'lecture' | 'program')}
-              className="w-full p-2 border rounded-md"
-              disabled={isUpdating || isDeleting}
-            >
-              {getAnnouncementTypesSync().map(type => (
-                <option key={type} value={type}>
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
-                </option>
+            <Label className="text-sm font-medium">Tags</Label>
+            <div className="flex flex-wrap gap-2">
+              {getEventTagOptions().map(tagOption => (
+                <label key={tagOption.value} className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    value={tagOption.value}
+                    checked={selectedTags.includes(tagOption.value)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedTags([...selectedTags, tagOption.value]);
+                      } else {
+                        setSelectedTags(selectedTags.filter(t => t !== tagOption.value));
+                      }
+                    }}
+                    disabled={isUpdating || isDeleting}
+                    className="rounded"
+                  />
+                  <span className="text-sm">{tagOption.label}</span>
+                </label>
               ))}
-            </select>
+            </div>
           </div>
 
           {/* Deadline */}

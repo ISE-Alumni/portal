@@ -1,12 +1,15 @@
 import { Tables } from '@/integrations/supabase/types';
 
-export type AnnouncementType = 'opportunity' | 'news' | 'lecture' | 'program';
+export interface Tag {
+  id: string;
+  name: string;
+  color: string;
+}
 
 export interface Announcement {
   id: string;
   title: string;
   content: string | null;
-  type: AnnouncementType;
   external_url: string | null;
   deadline: string | null;
   image_url: string | null;
@@ -14,15 +17,16 @@ export interface Announcement {
   updated_at: string;
   created_by: string;
   slug: string | null;
+  tags?: Tag[];
 }
 
 export interface NewAnnouncement {
   title: string;
   content: string | null;
-  type: AnnouncementType;
   external_url: string | null;
   deadline: string | null;
   image_url: string | null;
+  tag_ids?: string[];
 }
 
 export type AnnouncementSortBy = 'created_at' | 'deadline' | 'title';

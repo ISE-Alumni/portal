@@ -37,7 +37,6 @@ const createTestAnnouncement = (overrides: Partial<Announcement> = {}): Announce
   id: '1',
   title: 'Test Announcement',
   content: 'Test content',
-  type: 'opportunity',
   external_url: null,
   deadline: null,
   image_url: null,
@@ -45,6 +44,7 @@ const createTestAnnouncement = (overrides: Partial<Announcement> = {}): Announce
   updated_at: '2024-01-15T10:00:00Z',
   created_by: 'user-1',
   slug: 'test-announcement',
+  tags: [],
   ...overrides
 })
 
@@ -98,9 +98,9 @@ describe('Announcements domain functions', () => {
       expect(mockedSupabase.from).toHaveBeenCalledWith('announcements')
       expect(result).toHaveLength(2)
       expect(result[0]).toEqual({
-        ...mockAnnouncements[0],
-        image_url: 'https://picsum.photos/seed/announcement123/400/200.jpg',
-        type: 'opportunity'
+      ...mockAnnouncements[0],
+      image_url: 'https://picsum.photos/seed/announcement123/400/200.jpg',
+      tags: []
       })
     })
 
@@ -225,7 +225,7 @@ describe('Announcements domain functions', () => {
       expect(result).toEqual({
         ...mockAnnouncement,
         image_url: 'https://picsum.photos/seed/announcement123/400/200.jpg',
-        type: 'opportunity'
+        tags: []
       })
     })
 
@@ -354,9 +354,9 @@ describe('Announcements domain functions', () => {
 
       expect(mockedSupabase.from).toHaveBeenCalledWith('announcements')
       expect(result).toEqual({
-        ...createdAnnouncement,
-        image_url: 'https://picsum.photos/seed/announcement123/400/200.jpg',
-        type: 'opportunity'
+      ...createdAnnouncement,
+      image_url: 'https://picsum.photos/seed/announcement123/400/200.jpg',
+      tags: []
       })
     })
 
@@ -375,10 +375,10 @@ describe('Announcements domain functions', () => {
       const result = await createAnnouncement({
         title: 'Test',
         content: 'Test',
-        type: 'opportunity' as const,
         external_url: null,
         deadline: null,
-        image_url: null
+        image_url: null,
+        tag_ids: []
       }, 'user-123')
 
       expect(log.error).toHaveBeenCalledWith('Error creating announcement:', mockError)

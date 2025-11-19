@@ -1,6 +1,6 @@
 .env
 AGENTS.md
-sample_data.csv
+*.csv
 
 *.ts.html
 coverage
