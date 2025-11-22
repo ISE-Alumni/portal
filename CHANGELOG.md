@@ -1,3 +1,9 @@
+## [1.0.1](https://github.com/bxrne/ise-alumni/compare/v1.0.0...v1.0.1) (2025-11-22)
+
+### Bug Fixes
+
+* **.releaserc.json:** ignore bad msgs ([f2f83d3](https://github.com/bxrne/ise-alumni/commit/f2f83d3ca8bbc018ed0fa4f573bc2df7cd6e957a))
+
 ## 1.0.0 (2025-11-22)
 
 ### Features
