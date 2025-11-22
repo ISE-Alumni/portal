@@ -17,11 +17,11 @@ export async function getUserTypes(): Promise<string[]> {
     }
 
     // Extract unique user types
-    const uniqueTypes = [...new Set(data?.map(p => p.user_type).filter(Boolean) as string[])];
-    return uniqueTypes.length > 0 ? uniqueTypes : ['Admin', 'Staff', 'Alum'];
+    const uniqueTypes = [...new Set(data?.map((p: any) => p.user_type).filter(Boolean) as string[])];
+    return uniqueTypes.length > 0 ? uniqueTypes : ['Admin', 'Staff', 'Alumni'];
   } catch (error) {
     log.error('Error fetching user types:', error);
-    return ['Admin', 'Staff', 'Alum']; // Fallback
+    return ['Admin', 'Staff', 'Alumni']; // Fallback
   }
   }
  
@@ -123,7 +123,21 @@ export function canUserCreateContent(userType: string | null): boolean {
 export function isAdmin(userType: string | null): boolean {
   if (!userType) return false;
   const validTypes = getUserTypesSync();
+  return userType === 'Admin';
+}
+
+export function isStaffOrAdmin(userType: string | null): boolean {
+  if (!userType) return false;
+  const validTypes = getUserTypesSync();
   return userType === 'Admin' || userType === 'Staff';
+}
+
+export function canUserCreateEvents(userType: string | null): boolean {
+  return isAdmin(userType);
+}
+
+export function canUserCreateAnnouncements(userType: string | null): boolean {
+  return isStaffOrAdmin(userType);
 }
 
 // Type definitions for better TypeScript support
