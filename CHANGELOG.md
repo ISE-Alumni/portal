@@ -1,3 +1,9 @@
+## [1.1.0](https://github.com/bxrne/ise-alumni/compare/v1.0.1...v1.1.0) (2025-11-22)
+
+### Features
+
+* **integrations, migrations:** Add profile history via stored proc ([a5b9567](https://github.com/bxrne/ise-alumni/commit/a5b95677c2c846794ef872f4fbad69e7e110facc))
+
 ## [1.0.1](https://github.com/bxrne/ise-alumni/compare/v1.0.0...v1.0.1) (2025-11-22)
 
 ### Bug Fixes
