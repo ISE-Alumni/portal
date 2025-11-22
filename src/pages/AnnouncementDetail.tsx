@@ -201,8 +201,8 @@ const AnnouncementDetail = () => {
 
   const imageUrl = announcement.image_url || `https://placehold.co/600x400?text=Announcement+${announcement.id}`;
 
-  // Check if current user can edit this announcement
-  const canEdit = user && (announcement.created_by === user.id);
+  // Check if current user can edit this announcement (organiser only)
+  const canEdit = user && (announcement.organiser_profile_id === user.id);
 
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this announcement? This action cannot be undone.')) {

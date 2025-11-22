@@ -13,7 +13,7 @@ import { type EventData, type Tag } from "@/lib/types";
 import { getEvents, getTags, isEventInPast, isEventUpcoming } from "@/lib/domain";
 import { formatDate } from "@/lib/utils/date";
 import { log } from '@/lib/utils/logger';
-import { canUserCreateContent } from '@/lib/constants';
+import { canUserCreateEvents } from '@/lib/constants';
 
 const ExistingEvent = ({ event }: { event: EventData }) => {
   const navigate = useNavigate();
@@ -146,8 +146,8 @@ const Events = () => {
     fetchEvents(); // Refresh events list
   };
 
-  // Check if user can create events (admin or staff)
-  const canCreateEvents = user && userProfile && canUserCreateContent(userProfile.user_type);
+  // Check if user can create events (admin only)
+  const canCreateEvents = user && userProfile && canUserCreateEvents(userProfile.user_type);
 
   // Filter and sort events
   const allUpcomingEvents = events.filter(event => isEventUpcoming(event));

@@ -223,8 +223,8 @@ const EventDetail = () => {
 
   const imageUrl = event.image_url || `https://placehold.co/600x400?text=Event+${event.id}`;
 
-  // Check if current user can edit this event
-  const canEdit = user && (event.created_by === user.id);
+  // Check if current user can edit this event (organiser only)
+  const canEdit = user && (event.organiser_profile_id === user.id);
 
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) {

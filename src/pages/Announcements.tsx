@@ -12,7 +12,7 @@ import { getAnnouncements, createAnnouncement, getAnnouncementById } from '@/lib
 import { formatDateShort, isDateInPast, isDateWithinLastDays } from '@/lib/utils/date';
 import { filterAnnouncements, sortAnnouncements, type SortOption } from '@/lib/utils/data';
 import { log } from '@/lib/utils/logger';
-import { canUserCreateContent } from '@/lib/constants';
+import { canUserCreateAnnouncements } from '@/lib/constants';
 import { getTags } from '@/lib/domain';
 import { getEventTagColorClass } from '@/lib/utils/ui';
 
@@ -218,7 +218,7 @@ export const Announcements = () => {
     fetchAnnouncements(); // Refresh announcements list
    };
 
-  const canCreateAnnouncement = canUserCreateContent(userProfile?.user_type || null);
+  const canCreateAnnouncement = canUserCreateAnnouncements(userProfile?.user_type || null);
 
   if (loading) {
     return (
