@@ -40,12 +40,12 @@ serve(async (req) => {
         user:auth.users!inner(
           email
         ),
-        event:events!inner(
+        event:events!left(
           title,
           start_at,
           location
         ),
-        announcement:announcements!inner(
+        announcement:announcements!left(
           title,
           deadline
         )
