@@ -1,3 +1,9 @@
+## [1.1.2](https://github.com/bxrne/ise-alumni/compare/v1.1.1...v1.1.2) (2025-11-25)
+
+### Bug Fixes
+
+* **dashboard:** profile photos and counts for alum ([2fd20d8](https://github.com/bxrne/ise-alumni/commit/2fd20d8eb13e671e230326406781fcbd82a1ee59))
+
 ## [1.1.1](https://github.com/bxrne/ise-alumni/compare/v1.1.0...v1.1.1) (2025-11-25)
 
 ### Bug Fixes
