@@ -45,7 +45,7 @@ serve(async (req) => {
       .from('reminders')
       .select(`
         *,
-        user:profiles!inner(
+        user:auth.users!inner(
           email
         ),
         event:events!inner(
