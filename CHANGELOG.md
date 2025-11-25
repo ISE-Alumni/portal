@@ -1,3 +1,9 @@
+## [1.2.1](https://github.com/bxrne/ise-alumni/compare/v1.2.0...v1.2.1) (2025-11-25)
+
+### Bug Fixes
+
+* **dashboard:** show residency count in rp list ([887c127](https://github.com/bxrne/ise-alumni/commit/887c1277a2419c8d781a4412c3ce0b9403c25818))
+
 ## [1.2.0](https://github.com/bxrne/ise-alumni/compare/v1.1.2...v1.2.0) (2025-11-25)
 
 ### Features
