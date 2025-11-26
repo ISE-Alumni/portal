@@ -1,3 +1,23 @@
+## [1.3.0](https://github.com/bxrne/ise-alumni/compare/v1.2.1...v1.3.0) (2025-11-26)
+
+### Features
+
+* **Index.tsx, lib:** Add residency recording ([08dca92](https://github.com/bxrne/ise-alumni/commit/08dca924588e2656950581cb780a834f7a0de336))
+* **profile:** Change professional status to a select (added OTW) ([4a69172](https://github.com/bxrne/ise-alumni/commit/4a6917227cd249f63d877e153ef54404d87b994e))
+
+### Bug Fixes
+
+* **Dashboard, Index:** Add profile completion metric, and show profile updates in dash ([0127a5e](https://github.com/bxrne/ise-alumni/commit/0127a5e041a7ab1058e057f92c9ed4fea727dac9))
+* **Directory, Index:** Fixed layouts ([77dd27f](https://github.com/bxrne/ise-alumni/commit/77dd27f7a8877810c1f4abfaabbadfaa6ba6bdbc))
+* **Directory:** add filtering based on status ([213c9d8](https://github.com/bxrne/ise-alumni/commit/213c9d847c2a8f98fb47679f7fb65e527ddbc2bc))
+* **Index.tsx:** Tidy profile page to be more usable ([d005fde](https://github.com/bxrne/ise-alumni/commit/d005fdee281728d7232fa8af425fe883a3213972))
+* **ProfilePage:** show residencies and better layout ([ea11e06](https://github.com/bxrne/ise-alumni/commit/ea11e0618a9923da812988093822b1afac6e6b2a))
+* **profiles, Dashboard:** extend profile tracking to extra fields and add recent updates tabe to dash to check this ([a9a7432](https://github.com/bxrne/ise-alumni/commit/a9a74325cd1146201c2751a764e16e3b39a5d69a))
+
+### Code Refactoring
+
+* **pages, lib:** reduce duplication via hooks ([14a3bf3](https://github.com/bxrne/ise-alumni/commit/14a3bf3b3c71ebf92a687eec67d2235fad1f48f5))
+
 ## [1.2.1](https://github.com/bxrne/ise-alumni/compare/v1.2.0...v1.2.1) (2025-11-25)
 
 ### Bug Fixes
