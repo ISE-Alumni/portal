@@ -1,3 +1,17 @@
+## [1.4.0](https://github.com/bxrne/ise-alumni/compare/v1.3.0...v1.4.0) (2025-11-27)
+
+### Features
+
+* **Index, Dashboard:** delete and add users (soft delete) ([403633e](https://github.com/bxrne/ise-alumni/commit/403633ed2a8bb0cd23b4f755af670825e5f8deaa))
+
+### Bug Fixes
+
+* **Dashboard:** remove failed bulk user op (429 rl) ([e369553](https://github.com/bxrne/ise-alumni/commit/e369553cf40c05f56690960351a52e3b7e6377c7))
+
+### Tests
+
+* **profiles:** fix mock ([6fed4ec](https://github.com/bxrne/ise-alumni/commit/6fed4ec188a153587b1f373031c6f27fe10d6efe))
+
 ## [1.3.0](https://github.com/bxrne/ise-alumni/compare/v1.2.1...v1.3.0) (2025-11-26)
 
 ### Features
