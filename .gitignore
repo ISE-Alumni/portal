@@ -5,6 +5,7 @@ AGENTS.md
 
 *.ts.html
 coverage
+opencodetmp/
 
 # Logs
 logs
