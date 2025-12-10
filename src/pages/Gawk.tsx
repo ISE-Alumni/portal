@@ -398,9 +398,9 @@ const Gawk = () => {
                         <Line 
                           type="monotone" 
                           dataKey="count" 
-                          stroke="var(--color-count)" 
+                          stroke="hsl(var(--primary))" 
                           strokeWidth={2}
-                          dot={{ fill: "var(--color-count)" }}
+                          dot={{ fill: "hsl(var(--primary))" }}
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -489,10 +489,10 @@ const Gawk = () => {
                         <XAxis dataKey="segment" />
                         <YAxis allowDecimals={false} />
                         <ChartTooltip content={<ChartTooltipContent />} />
-                        <Bar dataKey="employed" stackId="a" fill="var(--color-employed)" />
-                        <Bar dataKey="entrepreneur" stackId="a" fill="var(--color-entrepreneur)" />
-                        <Bar dataKey="open" stackId="a" fill="var(--color-open)" />
-                        <Bar dataKey="unknown" stackId="a" fill="var(--color-unknown)" />
+                        <Bar dataKey="employed" stackId="a" fill="hsl(var(--primary))" />
+                        <Bar dataKey="entrepreneur" stackId="a" fill="hsl(var(--primary))" />
+                        <Bar dataKey="open" stackId="a" fill="hsl(var(--primary))" />
+                        <Bar dataKey="unknown" stackId="a" fill="hsl(var(--muted-foreground))" />
                       </BarChart>
                     </ResponsiveContainer>
                   </ChartContainer>
@@ -523,7 +523,7 @@ const Gawk = () => {
                         <XAxis dataKey="month" />
                         <YAxis allowDecimals={false} />
                         <ChartTooltip content={<ChartTooltipContent />} />
-                        <Line type="monotone" dataKey="count" stroke="var(--color-count)" strokeWidth={2} dot />
+                        <Line type="monotone" dataKey="count" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ fill: "hsl(var(--primary))" }} />
                       </LineChart>
                     </ResponsiveContainer>
                   </ChartContainer>
@@ -626,26 +626,42 @@ const Gawk = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>City / employer before vs after</CardTitle>
-                <CardDescription>First vs latest snapshot (proxy for City1→City2, Emp1→Emp2)</CardDescription>
+                <CardTitle>Mobility over time</CardTitle>
+                <CardDescription>City count trend from history events</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {dataLoading ? (
-                  <div className="flex items-center justify-center py-8">
+              <CardContent>
+                {analyticsLoading ? (
+                  <div className="flex items-center justify-center h-64">
                     <Loader2 className="h-6 w-6 animate-spin" />
                   </div>
-                ) : recentHistory.slice(0, 5).map((entry) => (
-                  <div key={entry.id} className="p-3 border rounded-lg space-y-1">
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>Latest</span>
-                      <span>{formatDateShort(entry.changed_at)}</span>
-                    </div>
-                    <p className="font-medium">{entry.job_title || 'Role TBD'}</p>
-                    <p className="text-sm text-muted-foreground">{entry.company || 'Company n/a'} • {entry.city || 'City n/a'}</p>
-                  </div>
-                ))}
-                {recentHistory.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-6">No history rows to compare</p>
+                ) : (
+                  <ChartContainer
+                    config={{
+                      count: { label: 'City touches', color: 'hsl(var(--chart-1))' },
+                    }}
+                    className="h-64"
+                  >
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={fieldChangesByMonth.map(m => {
+                        const monthCities = history
+                          .filter(h => h.changed_at.startsWith(m.month))
+                          .reduce<Record<string, boolean>>((acc, h) => {
+                            if (h.city) {
+                              const key = h.country ? `${h.city}, ${h.country}` : h.city;
+                              acc[key] = true;
+                            }
+                            return acc;
+                          }, {});
+                        return { month: m.month, count: Object.keys(monthCities).length };
+                      })}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis allowDecimals={false} />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Line type="monotone" dataKey="count" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ fill: "hsl(var(--primary))" }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
                 )}
               </CardContent>
             </Card>
@@ -803,15 +819,7 @@ const Gawk = () => {
             </Card>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Still to wire with richer data</CardTitle>
-              <CardDescription>Distance from ISE, wistem stat, participation, outside achievements, RP at grad/+5/+10</CardDescription>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground space-y-2">
-              <p>These need additional inputs: event attendance logs, geo coordinates for distance, awards/news tables, and time-sliced residency snapshots. Ready to hook up once data lands.</p>
-            </CardContent>
-          </Card>
+       
         </TabsContent>
       </Tabs>
     </div>
