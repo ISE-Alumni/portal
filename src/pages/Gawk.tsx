@@ -7,7 +7,6 @@ import {
   type SignInData, 
   type UserActivity, 
   getProfileHistory, 
-  getProfileHistoryStats, 
   getSignInsOverTime, 
   getUserActivity 
 } from '@/lib/domain/profiles';
@@ -20,29 +19,10 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Loader2, ShieldAlert, BarChart3, RefreshCcw, Home, Lightbulb, MapPin, Briefcase } from 'lucide-react';
+import { Loader2, ShieldAlert, BarChart3, RefreshCcw, Home, MapPin, Briefcase } from 'lucide-react';
 import { formatDateShort } from '@/lib/utils/date';
 import { supabase } from '@/integrations/supabase/client';
 import { log } from '@/lib/utils/logger';
-
-const ideaBacklog = [
-  { title: 'Rate of employment', hint: 'Track employed vs open to work across cohorts and BSc/MSc.' },
-  { title: 'Field change', hint: 'Measure transitions between industries or roles.' },
-  { title: 'Location drift', hint: 'Map moves between cities/countries over time.' },
-  { title: 'Residency persistence', hint: 'Retention at residency partners at grad/+5/+10.' },
-  { title: 'Entrepreneur rate', hint: 'Share of entrepreneurs and their longevity.' },
-  { title: 'Job title trends', hint: 'Most common and fastest growing titles.' },
-  { title: 'Academia paths', hint: 'Who continued to academic roles beyond ISE.' },
-  { title: 'Alumni participation', hint: 'Events, IAB, news, guest lecturers involvement.' },
-  { title: 'Outside achievements', hint: 'Awards, publications, notable mentions.' },
-  { title: 'City1/City2 + Emp1/Emp2', hint: 'Before/after comparisons for geography and employers.' },
-  { title: 'Cohort splits', hint: 'Break everything down per cohort and BSc/MSc.' },
-  { title: 'Biggest gawker', hint: 'Most active viewer/participant this year.' },
-  { title: 'Jetsetter', hint: 'Most locations traveled or lived.' },
-  { title: 'Antiloyalist', hint: 'Most employers changed over time.' },
-  { title: 'Furthest vs closest to ISE', hint: 'Geo distance from campus over time.' },
-  { title: 'Residency partner rankings', hint: 'Most popular/best rated RP at grad/+5/+10.' },
-];
 
 const Gawk = () => {
   const { user, loading } = useAuth();
@@ -96,8 +76,7 @@ const Gawk = () => {
         setAnalyticsLoading(true);
         setDataLoading(true);
 
-        const [stats, signInData, historyData, activity, profilesData, partners] = await Promise.all([
-          getProfileHistoryStats(),
+        const [signInData, historyData, activity, profilesData, partners] = await Promise.all([
           getSignInsOverTime(90),
           getProfileHistory(),
           getUserActivity(),
@@ -105,14 +84,35 @@ const Gawk = () => {
           getResidencyPartners()
         ]);
 
-        setHistoryStats(stats);
+        const nonStaffProfiles = profilesData.filter(p => p.user_type !== 'Staff');
+        setProfiles(nonStaffProfiles);
+
+        const allowedIds = new Set(nonStaffProfiles.map(p => p.id));
+        const filteredHistory = historyData.filter(h => allowedIds.has(h.profile_id));
+        setHistory(filteredHistory);
+
+        const monthCounts: Record<string, number> = {};
+        const typeCounts: Record<string, number> = {};
+        filteredHistory.forEach(h => {
+          const month = new Date(h.changed_at).toISOString().slice(0, 7);
+          monthCounts[month] = (monthCounts[month] || 0) + 1;
+          typeCounts[h.change_type] = (typeCounts[h.change_type] || 0) + 1;
+        });
+
+        setHistoryStats({
+          totalChanges: filteredHistory.length,
+          changesByMonth: Object.entries(monthCounts).sort(([a], [b]) => a.localeCompare(b)).map(([month, count]) => ({ month, count })),
+          changesByType: Object.entries(typeCounts).map(([type, count]) => ({ type, count })),
+          topChangedFields: []
+        });
+
+        const filteredActivity = activity.filter(a => a.profile?.user_type !== 'Staff');
+        setUserActivity(filteredActivity);
+
         setSignIns(signInData);
-        setHistory(historyData);
-        setUserActivity(activity);
-        setProfiles(profilesData);
         setResidencyPartners(partners);
 
-        const resStats = await getResidencyStats(profilesData);
+        const resStats = await getResidencyStats(nonStaffProfiles);
         setResidencyStats(resStats);
       } catch (error) {
         log.error('Error loading gawk analytics:', error);
@@ -318,13 +318,12 @@ const Gawk = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6">
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="employment">Employment</TabsTrigger>
           <TabsTrigger value="mobility">Mobility</TabsTrigger>
           <TabsTrigger value="residency">Residency</TabsTrigger>
           <TabsTrigger value="leaderboards">Leaderboards</TabsTrigger>
-          <TabsTrigger value="ideas">Ideas</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -463,7 +462,7 @@ const Gawk = () => {
         </TabsContent>
 
         <TabsContent value="employment" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card>
               <CardHeader>
                 <CardTitle>Employment & entrepreneurship rate</CardTitle>
@@ -643,9 +642,6 @@ const Gawk = () => {
                     </div>
                     <p className="font-medium">{entry.job_title || 'Role TBD'}</p>
                     <p className="text-sm text-muted-foreground">{entry.company || 'Company n/a'} • {entry.city || 'City n/a'}</p>
-                    <div className="text-xs text-muted-foreground">
-                      This is a fast peek; full before/after diff will need richer history stitching.
-                    </div>
                   </div>
                 ))}
                 {recentHistory.length === 0 && (
@@ -814,29 +810,6 @@ const Gawk = () => {
             </CardHeader>
             <CardContent className="text-sm text-muted-foreground space-y-2">
               <p>These need additional inputs: event attendance logs, geo coordinates for distance, awards/news tables, and time-sliced residency snapshots. Ready to hook up once data lands.</p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="ideas" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Idea backlog</CardTitle>
-              <CardDescription>Shortlist of comparisons and leaderboards to iterate next</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {ideaBacklog.map((idea) => (
-                <div key={idea.title} className="flex items-start justify-between p-3 border rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <Lightbulb className="h-4 w-4 text-amber-500 mt-1" />
-                    <div>
-                      <p className="font-medium">{idea.title}</p>
-                      <p className="text-sm text-muted-foreground">{idea.hint}</p>
-                    </div>
-                  </div>
-                  <Badge variant="outline">Planned</Badge>
-                </div>
-              ))}
             </CardContent>
           </Card>
         </TabsContent>
