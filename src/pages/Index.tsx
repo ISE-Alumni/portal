@@ -42,7 +42,6 @@ const Index = () => {
     isRemote: false,
     isEntrepreneur: false,
     isIseChampion: false,
-    employed: true,
     professionalStatus: null as ProfessionalStatus | null,
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -75,7 +74,6 @@ const Index = () => {
         isRemote: false,
         isEntrepreneur: false,
         isIseChampion: false,
-        employed: true,
         professionalStatus: null,
       });
       setAvatarFile(null);
@@ -121,7 +119,6 @@ const Index = () => {
             isRemote: data.is_remote ?? false,
             isEntrepreneur: data.is_entrepreneur ?? false,
             isIseChampion: data.is_ise_champion ?? false,
-            employed: data.employed ?? true,
             professionalStatus: data.professional_status ?? null,
           });
         }

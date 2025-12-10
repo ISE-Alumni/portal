@@ -229,12 +229,6 @@ const MapPage = () => {
         {/* Map */}
         <div className="lg:col-span-3">
           <Card className="border-2 border-foreground shadow-none">
-            <CardHeader className="pb-2">
-              <CardTitle className="tracking-tight flex items-center gap-2">
-                <MapPinIcon className="w-5 h-5" />
-                Alumni Locations
-              </CardTitle>
-            </CardHeader>
             <CardContent className="p-0">
               <div className="h-[600px] w-full">
                 <Map

@@ -26,7 +26,6 @@ export interface Profile {
   is_remote: boolean | null;
   is_entrepreneur: boolean | null;
   is_ise_champion: boolean | null;
-  employed: boolean | null;
   professional_status: ProfessionalStatus | null;
   user_type: UserRole;
   removed: boolean;
@@ -52,7 +51,6 @@ export interface ProfileFormData {
   isRemote: boolean;
   isEntrepreneur: boolean;
   isIseChampion: boolean;
-  employed: boolean;
   professionalStatus: ProfessionalStatus | null;
 }
 
