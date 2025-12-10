@@ -59,7 +59,6 @@ describe('Profiles domain functions', () => {
           is_remote: false,
           is_entrepreneur: false,
           is_ise_champion: false,
-          employed: true,
           created_at: '2024-01-01T00:00:00Z',
           updated_at: '2024-01-01T00:00:00Z'
         }
@@ -141,7 +140,6 @@ describe('Profiles domain functions', () => {
         is_remote: false,
         is_entrepreneur: false,
         is_ise_champion: false,
-        employed: true,
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z'
       }
@@ -203,7 +201,7 @@ describe('Profiles domain functions', () => {
         isRemote: false,
         isEntrepreneur: false,
         isIseChampion: false,
-        employed: true
+        professionalStatus: 'employed'
       }
 
       const updatedProfile = {
@@ -230,7 +228,7 @@ describe('Profiles domain functions', () => {
         is_remote: false,
         is_entrepreneur: false,
         is_ise_champion: false,
-        employed: true,
+        professional_status: 'employed',
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-15T00:00:00Z'
       }
@@ -282,7 +280,7 @@ describe('Profiles domain functions', () => {
         isRemote: false,
         isEntrepreneur: false,
         isIseChampion: false,
-        employed: false
+        professionalStatus: null
       }
 
       const result = await updateProfile('1', formData)
@@ -320,7 +318,7 @@ describe('Profiles domain functions', () => {
           is_remote: false,
           is_entrepreneur: false,
           is_ise_champion: false,
-          employed: true,
+          professional_status: 'employed',
           created_at: '2024-01-01T00:00:00Z',
           updated_at: '2024-01-01T00:00:00Z'
         }
@@ -408,7 +406,6 @@ describe('Profiles domain functions', () => {
         is_remote: false,
         is_entrepreneur: false,
         is_ise_champion: false,
-        employed: true,
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z'
       }
@@ -442,7 +439,6 @@ describe('Profiles domain functions', () => {
         is_remote: false,
         is_entrepreneur: false,
         is_ise_champion: false,
-        employed: false,
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z'
       }
@@ -475,7 +471,6 @@ describe('Profiles domain functions', () => {
         is_remote: false,
         is_entrepreneur: false,
         is_ise_champion: false,
-        employed: true,
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z'
       }
