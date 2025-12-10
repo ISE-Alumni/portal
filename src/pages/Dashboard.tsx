@@ -76,6 +76,7 @@ import {
   Edit,
   Trash2,
   Eye,
+  BarChart3,
 } from 'lucide-react';
 
 // Helper function to render profile avatar or initials
@@ -776,11 +777,21 @@ const Dashboard = () => {
   return (
     <div>
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome back, {profile.full_name || 'Admin'}
-        </p>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Welcome back, {profile.full_name || 'Admin'}
+          </p>
+        </div>
+        <Button 
+          variant="outline" 
+          className="flex items-center gap-2"
+          onClick={() => navigate('/gawk')}
+        >
+          <BarChart3 className="h-4 w-4" />
+          Open Gawk
+        </Button>
       </div>
 
       {/* Tabs */}
@@ -956,7 +967,7 @@ const Dashboard = () => {
 
         <TabsContent value="users" className="space-y-4">
           {/* Manage Users */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Add User Card */}
             <Card>
               <CardHeader>
@@ -1243,75 +1254,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Recent Updates */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Recent Updates</CardTitle>
-                  <CardDescription>
-                    Profile changes recorded in the last 7 days
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {analyticsLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                </div>
-              ) : (() => {
-                const recentUpdates = fieldChanges
-                  .filter(change => isDateWithinLastDays(change.changedAt, 7))
-                  .slice(0, 10);
-
-                return recentUpdates.length > 0 ? (
-                  <div className="space-y-4">
-                    {recentUpdates.map((change) => {
-                      const profile = profiles.find(p => p.email === change.userEmail);
-                      return (
-                        <div key={change.id} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center space-x-3">
-                            {renderProfileAvatar(profile || { full_name: change.userName, avatar_url: null }, "w-8 h-8")}
-                            <div>
-                              <p className="font-medium">{change.userName}</p>
-                              <p className="text-sm text-muted-foreground">{change.userEmail}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="flex items-center space-x-2 mb-1">
-                              <Badge variant="outline" className="text-xs">
-                                {change.fieldName}
-                              </Badge>
-                              {change.changeType === 'INSERT' ? (
-                                <Badge variant="default" className="text-xs">
-                                  Added
-                                </Badge>
-                              ) : (
-                                <Badge variant="secondary" className="text-xs">
-                                  Updated
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-sm font-medium text-green-600">
-                              {change.newValue}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {formatDateShort(change.changedAt)}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>No recent profile updates to display</p>
-                  </div>
-                );
-              })()}
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="events" className="space-y-4">

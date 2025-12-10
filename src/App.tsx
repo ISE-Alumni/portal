@@ -15,6 +15,7 @@ import EventDetail from "./pages/EventDetail";
 import Directory from "./pages/Directory";
 import ProfilePage from "./pages/ProfilePage";
 import Dashboard from "./pages/Dashboard";
+import Gawk from "./pages/Gawk";
 import Layout from "@/components/Layout";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/directory" element={<Layout><Directory /></Layout>} />
             <Route path="/profile/:id" element={<Layout><ProfilePage /></Layout>} />
             <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+            <Route path="/gawk" element={<Layout><Gawk /></Layout>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
