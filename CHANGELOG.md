@@ -1,3 +1,18 @@
+## [1.7.1](https://github.com/ISE-Alumni/portal/compare/v1.7.0...v1.7.1) (2025-12-18)
+
+### Bug Fixes
+
+* **dependabot.yml:** Change package ecosystem from pnpm to npm ([3db73bd](https://github.com/ISE-Alumni/portal/commit/3db73bdf1d246a872c82662c94efceee66de6d8d))
+
+### Documentation
+
+* **README:** remove contributing guidelines, code of conduct, and security section to streamline documentation ([951b9f5](https://github.com/ISE-Alumni/portal/commit/951b9f5a30156c68f001ef5c2b49af953cbc612c))
+* **README:** update project overview, features, tech stack, and installation instructions; add contribution guidelines and issue templates ([4a92237](https://github.com/ISE-Alumni/portal/commit/4a92237fa66e6f52c6933c1972eec78dd56f1506))
+
+### Continuous Integration
+
+* **dependabot.yml:** Add code scanning for dependabot ([f28b927](https://github.com/ISE-Alumni/portal/commit/f28b9274aaa18cc4473f4cf431ce49dfd14ca6a4))
+
 ## [1.7.0](https://github.com/bxrne/ise-alumni/compare/v1.6.1...v1.7.0) (2025-12-18)
 
 ### Features
