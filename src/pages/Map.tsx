@@ -131,12 +131,20 @@ const MapPage = () => {
         setLoading(true);
         setError(null);
 
-        const { data, error: fetchError } = await supabase.rpc('rpc_get_map_data', {
+        const { data, error: fetchError } = await supabase.rpc<{
+          profile_id: string;
+          full_name: string | null;
+          lat: number;
+          lng: number;
+          graduation_year: number | null;
+          cohort: number | null;
+          msc: boolean | null;
+          company: string | null;
+          city: string | null;
+          country: string | null;
+          avatar_url: string | null;
+        }>('rpc_get_map_data', {
           view_mode: 'current',
-          p_company: null,
-          p_cohort: null,
-          p_grad_year: null,
-          p_degree: null,
         });
 
         if (fetchError) {
@@ -148,7 +156,7 @@ const MapPage = () => {
           return;
         }
 
-        const mappedData: AlumniData[] = data.map((row: any) => ({
+        const mappedData: AlumniData[] = data.map((row) => ({
           id: row.profile_id,
           name: row.full_name || 'Unknown',
           avatarUrl: row.avatar_url || null,
@@ -194,12 +202,25 @@ const MapPage = () => {
     try {
       setLoadingHistory(true);
 
-      const { data, error } = await supabase.rpc('rpc_get_map_data', {
+      const { data, error } = await supabase.rpc<{
+        profile_id: string;
+        full_name: string | null;
+        lat: number | null;
+        lng: number | null;
+        graduation_year: number | null;
+        cohort: number | null;
+        msc: boolean | null;
+        company: string | null;
+        city: string | null;
+        country: string | null;
+        avatar_url: string | null;
+        timestamps: string[] | null;
+        cities: (string | null)[] | null;
+        countries: (string | null)[] | null;
+        companies: (string | null)[] | null;
+        job_titles: (string | null)[] | null;
+      }>('rpc_get_map_data', {
         view_mode: 'overtime',
-        p_company: null,
-        p_cohort: null,
-        p_grad_year: null,
-        p_degree: null,
       });
 
       if (error) {
@@ -215,7 +236,7 @@ const MapPage = () => {
       const paths: MovementPath[] = [];
       let userIndex = 0;
 
-      for (const row of data as any[]) {
+      for (const row of data) {
         const timestamps: string[] = row.timestamps || [];
         const cities: (string | null)[] = row.cities || [];
         const countries: (string | null)[] = row.countries || [];
