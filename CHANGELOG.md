@@ -1,3 +1,24 @@
+## [1.7.2](https://github.com/ise-alumni/portal/compare/v1.7.1...v1.7.2) (2025-12-18)
+
+### Bug Fixes
+
+* **workflows, Dashboard:** remove unused code which was vulerable if uncommented and add permissions to the ci pipeline ([6c57027](https://github.com/ise-alumni/portal/commit/6c57027e92b30763c09d8dff10c2fd39476a4613))
+
+### Miscellaneous Chores
+
+* **deps-dev:** bump @eslint/js from 9.36.0 to 9.39.2 ([c16fb1c](https://github.com/ise-alumni/portal/commit/c16fb1c5424dbf28b3dcab91d81ebed1786949d8))
+* **deps-dev:** bump @types/node from 22.18.8 to 25.0.3 ([34e2914](https://github.com/ise-alumni/portal/commit/34e2914c96480473b684e0875ac4966c47063dc4))
+* **deps-dev:** bump globals from 15.15.0 to 16.5.0 ([ffd8e54](https://github.com/ise-alumni/portal/commit/ffd8e541ed0c10f0646b9781f4288e427a8c75d5))
+* **deps-dev:** bump pino-pretty from 13.1.2 to 13.1.3 ([a14619c](https://github.com/ise-alumni/portal/commit/a14619c970aaf96a3bafb554f9832c8a0d70a51d))
+* **deps-dev:** bump semantic-release from 24.2.9 to 25.0.2 ([c8090c2](https://github.com/ise-alumni/portal/commit/c8090c239808ce9d0d31b9f2a7c0da798ce89502))
+* **deps-dev:** bump vite in the npm_and_yarn group across 1 directory ([e4cef18](https://github.com/ise-alumni/portal/commit/e4cef180c398a5cafd9db204aa510c74bb8bb002))
+* **deps:** bump @radix-ui/react-label from 2.1.7 to 2.1.8 ([c22663a](https://github.com/ise-alumni/portal/commit/c22663a03240bbf2541ae19c55af4f4c95c93c4d))
+* **deps:** bump @tanstack/react-query from 5.90.2 to 5.90.12 ([b07b9b8](https://github.com/ise-alumni/portal/commit/b07b9b88849d8c92731e43b0ef3183dc8e2c829d))
+* **deps:** bump glob in the npm_and_yarn group across 1 directory ([d350a83](https://github.com/ise-alumni/portal/commit/d350a836f4929bef6ebac95d231fd3dc32850061))
+* **deps:** bump js-yaml in the npm_and_yarn group across 1 directory ([ac0162b](https://github.com/ise-alumni/portal/commit/ac0162b9a118a720bf15906727c00293780dbf45))
+* **deps:** bump mdast-util-to-hast ([646059e](https://github.com/ise-alumni/portal/commit/646059ec2d15b41bced23b64e05da285362cffdc))
+* **deps:** bump next-themes from 0.3.0 to 0.4.6 ([bd5b407](https://github.com/ise-alumni/portal/commit/bd5b407e28f5fe9c08d650f60b381f4acf21a314))
+
 ## [1.7.1](https://github.com/ISE-Alumni/portal/compare/v1.7.0...v1.7.1) (2025-12-18)
 
 ### Bug Fixes
