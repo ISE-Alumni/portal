@@ -207,3 +207,81 @@ export async function createAnnouncement(announcement: NewAnnouncement, userId: 
     return null;
   }
 }
+
+export async function deleteAnnouncement(id: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('announcements')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      log.error('Error deleting announcement:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    log.error('Error in deleteAnnouncement:', error);
+    return false;
+  }
+}
+
+export async function getAnnouncementsByUserId(userId: string): Promise<Announcement[]> {
+  const { data, error } = await supabase
+    .from('announcements')
+    .select(`
+      *,
+      organiser:organiser_profile_id (
+        id,
+        full_name,
+        email,
+        email_visible
+      ),
+      announcement_tags!inner(
+        tag_id,
+        tags!inner(
+          id,
+          name,
+          color
+        )
+      )
+    `)
+    .eq('created_by', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    log.error('Error fetching announcements by user ID:', error);
+    return [];
+  }
+
+  return data?.map((announcement) => {
+    const ann = announcement as AnnouncementRow & { 
+      organiser?: { id: string; full_name: string | null; email: string; email_visible: boolean } | null;
+      announcement_tags?: Array<{ 
+        tag_id: string; 
+        tags: { id: string; name: string; color: string } 
+      }> 
+    };
+    
+    return {
+      id: ann.id,
+      title: ann.title,
+      content: ann.content,
+      external_url: ann.external_url,
+      deadline: ann.deadline,
+      image_url: ann.image_url || 'https://placehold.co/600x400',
+      created_by: ann.created_by,
+      created_at: ann.created_at,
+      updated_at: ann.updated_at,
+      slug: ann.slug,
+      organiser_profile_id: ann.organiser_profile_id,
+      organiser: ann.organiser,
+      tags: ann.announcement_tags?.map((tagRelation) => ({
+        id: tagRelation.tags.id,
+        name: tagRelation.tags.name,
+        color: tagRelation.tags.color
+      })) || []
+    };
+  }) || [];
+}

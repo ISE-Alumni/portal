@@ -4,13 +4,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Profile, ProfileFormData, ProfessionalStatus } from '@/lib/types';
-import { getProfileByUserId, updateProfile, isProfileComplete } from '@/lib/domain/profiles';
+import { getProfileByUserId, updateProfile, isProfileComplete, uploadAvatar } from '@/lib/domain/profiles';
 import { getUserResidencies, createResidency, updateResidency, deleteResidency, getResidencyPartners, getAvailablePhases, type Residency, type NewResidency, type ResidencyPhase } from '@/lib/domain/residency';
 import { type ResidencyPartner } from '@/lib/types';
 import { log } from '@/lib/utils/logger';
@@ -167,28 +166,13 @@ const Index = () => {
    }, [profileLoading]);
 
   const handleAvatarUpload = useCallback(async (file: File) => {
-    if (!user) return;
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}.${fileExt}`;
-      const filePath = `avatars/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
+    if (!user) return null;
+    
+    const publicUrl = await uploadAvatar(user.id, file);
+    if (publicUrl) {
       setFormData(prev => ({ ...prev, avatarUrl: publicUrl }));
-      return publicUrl;
-    } catch (error) {
-      log.error("Avatar upload error:", error);
-      return null;
     }
+    return publicUrl;
   }, [user]);
 
   const handleSaveProfile = useCallback(async () => {
@@ -285,13 +269,6 @@ const Index = () => {
     setEditingResidency(null);
   };
 
-  const getAvailablePhases = () => {
-    const phases: ResidencyPhase[] = ['R1', 'R2', 'R3', 'R4'];
-    if (formData.msc) {
-      phases.push('R5');
-    }
-    return phases;
-  };
 
   if (loading) {
     return (
@@ -311,22 +288,8 @@ const Index = () => {
    const displayEmail = user?.email || profile?.email || '—';
    const lastSignedIn = user?.last_sign_in_at || '—';
 
-   // Calculate profile completion
-   const calculateProfileCompletion = () => {
-     if (!profile) return 0;
-     
-     const requiredFields = [
-       profile.full_name,
-       profile.bio,
-       profile.company,
-       profile.job_title
-     ];
-     
-     const completedFields = requiredFields.filter(field => field && field.trim() !== '').length;
-     return Math.round((completedFields / requiredFields.length) * 100);
-   };
-
-   const profileCompletion = calculateProfileCompletion();
+   // Calculate profile completion using domain function
+   const profileCompletion = calculateProfileCompletionPercentage(profile);
    const isComplete = profile ? isProfileComplete(profile) : false;
 
    return (
@@ -600,7 +563,7 @@ const Index = () => {
                                         <SelectValue placeholder="Select phase" />
                                       </SelectTrigger>
                                       <SelectContent>
-                                        {getAvailablePhases().map((phase) => (
+                                        {getAvailablePhases(formData.msc).map((phase) => (
                                           <SelectItem key={phase} value={phase}>
                                             {phase}
                                           </SelectItem>

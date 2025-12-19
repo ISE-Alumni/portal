@@ -180,3 +180,158 @@ export function isEventOngoing(event: EventData): boolean {
   
   return start <= now && (!end || end >= now);
 }
+
+export async function getEventById(id: string): Promise<EventData | null> {
+  try {
+    const { data, error } = await supabase
+      .from('events')
+      .select(`
+        *,
+        organiser:organiser_profile_id (
+          id,
+          full_name,
+          email,
+          email_visible
+        ),
+        event_tags (
+          tag_id,
+          tags (
+            id,
+            name,
+            color
+          )
+        )
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      log.error('Error fetching event by ID:', error);
+      return null;
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    const event = data as SupabaseEvent & {
+      organiser?: {
+        id: string;
+        full_name: string | null;
+        email: string | null;
+        email_visible: boolean | null;
+      };
+      event_tags?: Array<{
+        tag_id: string;
+        tags: Tag;
+      }>;
+    };
+
+    return {
+      id: event.id,
+      title: event.title,
+      description: event.description,
+      location: event.location,
+      location_url: event.location_url,
+      registration_url: event.registration_url || null,
+      start_at: event.start_at,
+      end_at: event.end_at,
+      organiser_profile_id: event.organiser_profile_id,
+      created_by: event.created_by,
+      created_at: event.created_at,
+      updated_at: event.updated_at,
+      image_url: event.image_url || 'https://placehold.co/600x400',
+      event_tags: event.event_tags?.map((et) => ({
+        tag_id: et.tag_id,
+        tags: et.tags
+      })) || [],
+      organiser: event.organiser
+    };
+  } catch (error) {
+    log.error('Error in getEventById:', error);
+    return null;
+  }
+}
+
+export async function deleteEvent(id: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('events')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      log.error('Error deleting event:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    log.error('Error in deleteEvent:', error);
+    return false;
+  }
+}
+
+export async function getEventsByUserId(userId: string): Promise<EventData[]> {
+  try {
+    const { data, error } = await supabase
+      .from('events')
+      .select(`
+        *,
+        organiser:organiser_profile_id (
+          id,
+          full_name,
+          email
+        ),
+        event_tags (
+          tag_id,
+          tags (
+            id,
+            name,
+            color
+          )
+        )
+      `)
+      .eq('created_by', userId)
+      .order('start_at', { ascending: false });
+
+    if (error) {
+      log.error('Error fetching events by user ID:', error);
+      return [];
+    }
+
+    return (data || []).map((event: SupabaseEvent & {
+      organiser?: {
+        id: string;
+        full_name: string | null;
+        email: string | null;
+      };
+      event_tags?: Array<{
+        tag_id: string;
+        tags: Tag;
+      }>;
+    }) => ({
+      id: event.id,
+      title: event.title,
+      description: event.description,
+      location: event.location,
+      location_url: event.location_url,
+      registration_url: event.registration_url || null,
+      start_at: event.start_at,
+      end_at: event.end_at,
+      organiser_profile_id: event.organiser_profile_id,
+      created_by: event.created_by,
+      created_at: event.created_at,
+      updated_at: event.updated_at,
+      image_url: event.image_url || 'https://placehold.co/600x400',
+      event_tags: event.event_tags?.map((et) => ({
+        tag_id: et.tag_id,
+        tags: et.tags
+      })) || [],
+      organiser: event.organiser
+    }));
+  } catch (error) {
+    log.error('Error in getEventsByUserId:', error);
+    return [];
+  }
+}
