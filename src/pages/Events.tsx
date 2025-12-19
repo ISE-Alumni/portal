@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { CalendarIcon, MapPinIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -118,12 +118,15 @@ const Events = () => {
     }
   }, [user, fetchUserProfile, refetchEvents]);
 
-  const handleEventCreated = () => {
+  const handleEventCreated = useCallback(() => {
     refetchEvents(); // Refresh events list
-  };
+  }, [refetchEvents]);
 
-  // Check if user can create events (admin only)
-  const canCreateEvents = user && userProfile && canUserCreateEvents(userProfile.user_type);
+  // Check if user can create events (admin only) - memoized
+  const canCreateEvents = useMemo(() => 
+    user && userProfile && canUserCreateEvents(userProfile.user_type),
+    [user, userProfile]
+  );
 
   // Apply tag filter
   useEffect(() => {
@@ -131,28 +134,32 @@ const Events = () => {
     setFilters(filters);
   }, [selectedTag, setFilters]);
 
-  // Filter and sort events
-  const allCurrentEvents = (filteredData || []).filter(event => 
-    isEventUpcoming(event) || isEventOngoing(event)
-  );
-  const allPastEvents = (filteredData || []).filter(event => isEventInPast(event));
-  
-  // Apply sorting
-  const upcomingEvents = allCurrentEvents.sort((a, b) => {
-    if (sortBy === 'date') {
-      return new Date(a.start_at).getTime() - new Date(b.start_at).getTime();
-    } else {
-      return a.title.localeCompare(b.title);
-    }
-  });
-  
-  const pastEvents = allPastEvents.sort((a, b) => {
-    if (sortBy === 'date') {
-      return new Date(b.start_at).getTime() - new Date(a.start_at).getTime(); // Past events sorted descending
-    } else {
-      return a.title.localeCompare(b.title);
-    }
-  });
+  // Filter and sort events - memoized
+  const { upcomingEvents, pastEvents } = useMemo(() => {
+    const allCurrentEvents = (filteredData || []).filter(event => 
+      isEventUpcoming(event) || isEventOngoing(event)
+    );
+    const allPastEvents = (filteredData || []).filter(event => isEventInPast(event));
+    
+    // Apply sorting
+    const sortedUpcoming = [...allCurrentEvents].sort((a, b) => {
+      if (sortBy === 'date') {
+        return new Date(a.start_at).getTime() - new Date(b.start_at).getTime();
+      } else {
+        return a.title.localeCompare(b.title);
+      }
+    });
+    
+    const sortedPast = [...allPastEvents].sort((a, b) => {
+      if (sortBy === 'date') {
+        return new Date(b.start_at).getTime() - new Date(a.start_at).getTime(); // Past events sorted descending
+      } else {
+        return a.title.localeCompare(b.title);
+      }
+    });
+
+    return { upcomingEvents: sortedUpcoming, pastEvents: sortedPast };
+  }, [filteredData, sortBy]);
 
   // Debug logging
   log.debug('Total events:', events.length);

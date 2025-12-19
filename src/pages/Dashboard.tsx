@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -204,8 +204,8 @@ const Dashboard = () => {
     fetchDashboardData();
   }, [user, profile]);
 
-  // Calculate statistics
-  const calculateStats = () => {
+  // Calculate statistics with useMemo
+  const stats = useMemo(() => {
     const totalUsers = profiles.length; // Use all profiles including staff for total count
     const completeProfiles = alumniProfiles.filter(isProfileComplete).length;
     const upcomingEvents = events.filter(isEventUpcoming).length;
@@ -222,21 +222,17 @@ const Dashboard = () => {
       recentUsers,
       profileCompletionRate: totalUsers > 0 ? Math.round((completeProfiles / totalUsers) * 100) : 0
     };
-  };
+  }, [profiles, alumniProfiles, events, announcements]);
 
-  const stats = calculateStats();
-
-  // Get recent activity
-  const getRecentActivity = () => {
-    const activities = [];
-    
+  // Get recent activity with useMemo
+  const recentActivity = useMemo(() => {
     // Recent users (last 7 days) - use alumni profiles
     const recentUsers = alumniProfiles
       .filter(p => isDateWithinLastDays(p.created_at, 7))
       .slice(0, 3)
       .map(p => ({
         id: p.id,
-        type: 'user',
+        type: 'user' as const,
         title: `New user: ${p.full_name || 'Anonymous'}`,
         description: p.bio || 'No bio provided',
         timestamp: p.created_at,
@@ -250,7 +246,7 @@ const Dashboard = () => {
       .slice(0, 3)
       .map(e => ({
         id: e.id,
-        type: 'event',
+        type: 'event' as const,
         title: `New event: ${e.title}`,
         description: e.description || 'No description',
         timestamp: e.created_at,
@@ -264,7 +260,7 @@ const Dashboard = () => {
       .slice(0, 3)
       .map(a => ({
         id: a.id,
-        type: 'announcement',
+        type: 'announcement' as const,
         title: `New announcement: ${a.title}`,
         description: a.content || 'No content',
         timestamp: a.created_at,
@@ -275,9 +271,7 @@ const Dashboard = () => {
     return [...recentUsers, ...recentEvents, ...recentAnnouncements]
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, 5);
-  };
-
-  const recentActivity = getRecentActivity();
+  }, [alumniProfiles, events, announcements]);
 
   // Fetch analytics data
   useEffect(() => {
@@ -350,8 +344,8 @@ const Dashboard = () => {
     fetchTagsData();
   }, [user, profile]);
 
-  // Residency partner handlers
-  const handleCreatePartner = async () => {
+  // Residency partner handlers with useCallback
+  const handleCreatePartner = useCallback(async () => {
     try {
       const newPartner = await createResidencyPartner({
         name: partnerForm.name,
@@ -362,7 +356,7 @@ const Dashboard = () => {
       });
       
       if (newPartner) {
-        setResidencyPartners([...residencyPartners, newPartner]);
+        setResidencyPartners(prev => [...prev, newPartner]);
         setIsCreatePartnerModalOpen(false);
         setPartnerForm({
           name: '',
@@ -375,9 +369,9 @@ const Dashboard = () => {
     } catch (error) {
       log.error('Error creating partner:', error);
     }
-  };
+  }, [partnerForm]);
 
-  const handleUpdatePartner = async () => {
+  const handleUpdatePartner = useCallback(async () => {
     if (!selectedPartner) return;
     
     try {
@@ -390,7 +384,7 @@ const Dashboard = () => {
       });
       
       if (updatedPartner) {
-        setResidencyPartners(residencyPartners.map(p => p.id === selectedPartner.id ? updatedPartner : p));
+        setResidencyPartners(prev => prev.map(p => p.id === selectedPartner.id ? updatedPartner : p));
         setIsEditPartnerModalOpen(false);
         setSelectedPartner(null);
         setPartnerForm({
@@ -404,22 +398,22 @@ const Dashboard = () => {
     } catch (error) {
       log.error('Error updating partner:', error);
     }
-  };
+  }, [selectedPartner, partnerForm]);
 
-  const handleDeletePartner = async (partnerId: string) => {
+  const handleDeletePartner = useCallback(async (partnerId: string) => {
     if (!confirm('Are you sure you want to delete this residency partner?')) return;
     
     try {
       const deleted = await deleteResidencyPartner(partnerId);
       if (deleted) {
-        setResidencyPartners(residencyPartners.filter(p => p.id !== partnerId));
+        setResidencyPartners(prev => prev.filter(p => p.id !== partnerId));
       }
     } catch (error) {
       log.error('Error deleting partner:', error);
     }
-  };
+  }, []);
 
-  const openEditModal = (partner: ResidencyPartner) => {
+  const openEditModal = useCallback((partner: ResidencyPartner) => {
     setSelectedPartner(partner);
     setPartnerForm({
       name: partner.name,
@@ -429,10 +423,10 @@ const Dashboard = () => {
       is_active: partner.is_active
     });
     setIsEditPartnerModalOpen(true);
-  };
+  }, []);
 
-  // User management handlers
-  const handleAddUser = async () => {
+  // User management handlers with useCallback
+  const handleAddUser = useCallback(async () => {
     try {
       setIsAddingUser(true);
       
@@ -471,9 +465,9 @@ const Dashboard = () => {
     } finally {
       setIsAddingUser(false);
     }
-  };
+  }, [addUserForm]);
 
-  const handleRemoveUser = async () => {
+  const handleRemoveUser = useCallback(async () => {
     if (!selectedUserForRemoval?.profile) return;
 
     try {
@@ -497,7 +491,7 @@ const Dashboard = () => {
       log.error('Error removing user:', error);
       toast.error(`Error removing user: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  };
+  }, [selectedUserForRemoval]);
 
 
 

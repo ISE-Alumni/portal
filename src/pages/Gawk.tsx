@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { type Profile } from '@/lib/types';
@@ -51,53 +51,53 @@ const Gawk = () => {
   const [companyLogoMap, setCompanyLogoMap] = useState<ReturnType<typeof buildCompanyLogoMap> | null>(null);
 
 
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      if (!user || !profile) return;
+  const fetchAnalytics = useCallback(async () => {
+    if (!user || !profile) return;
 
-      try {
-        setAnalyticsLoading(true);
-        setDataLoading(true);
+    try {
+      setAnalyticsLoading(true);
+      setDataLoading(true);
 
-        const [signInData, historyData, activity, profilesData, partners, stats] = await Promise.all([
-          getSignInsOverTime(90),
-          getProfileHistory(),
-          getUserActivity(),
-          getProfiles(),
-          getResidencyPartners(),
-          getProfileHistoryStats()
-        ]);
+      const [signInData, historyData, activity, profilesData, partners, stats] = await Promise.all([
+        getSignInsOverTime(90),
+        getProfileHistory(),
+        getUserActivity(),
+        getProfiles(),
+        getResidencyPartners(),
+        getProfileHistoryStats()
+      ]);
 
-        const nonStaffProfiles = profilesData.filter(p => p.user_type !== 'Staff');
-        setProfiles(nonStaffProfiles);
+      const nonStaffProfiles = profilesData.filter(p => p.user_type !== 'Staff');
+      setProfiles(nonStaffProfiles);
 
-        const allowedIds = new Set(nonStaffProfiles.map(p => p.id));
-        const filteredHistory = historyData.filter(h => allowedIds.has(h.profile_id));
-        setHistory(filteredHistory);
+      const allowedIds = new Set(nonStaffProfiles.map(p => p.id));
+      const filteredHistory = historyData.filter(h => allowedIds.has(h.profile_id));
+      setHistory(filteredHistory);
 
-        setHistoryStats(stats);
+      setHistoryStats(stats);
 
-        const filteredActivity = activity.filter(a => a.profile?.user_type !== 'Staff');
-        setUserActivity(filteredActivity);
+      const filteredActivity = activity.filter(a => a.profile?.user_type !== 'Staff');
+      setUserActivity(filteredActivity);
 
-        setSignIns(signInData);
-        setResidencyPartners(partners);
-        if (partners && partners.length > 0) {
-          setCompanyLogoMap(buildCompanyLogoMap(partners));
-        }
-
-        const resStats = await getResidencyStats(nonStaffProfiles);
-        setResidencyStats(resStats);
-      } catch (error) {
-        log.error('Error loading gawk analytics:', error);
-      } finally {
-        setAnalyticsLoading(false);
-        setDataLoading(false);
+      setSignIns(signInData);
+      setResidencyPartners(partners);
+      if (partners && partners.length > 0) {
+        setCompanyLogoMap(buildCompanyLogoMap(partners));
       }
-    };
 
-    fetchAnalytics();
+      const resStats = await getResidencyStats(nonStaffProfiles);
+      setResidencyStats(resStats);
+    } catch (error) {
+      log.error('Error loading gawk analytics:', error);
+    } finally {
+      setAnalyticsLoading(false);
+      setDataLoading(false);
+    }
   }, [user, profile]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
   const totalSignIns = useMemo(
     () => signIns.reduce((sum, entry) => sum + entry.count, 0),

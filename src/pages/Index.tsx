@@ -166,7 +166,7 @@ const Index = () => {
      }
    }, [profileLoading]);
 
-  const handleAvatarUpload = async (file: File) => {
+  const handleAvatarUpload = useCallback(async (file: File) => {
     if (!user) return;
     try {
       const fileExt = file.name.split('.').pop();
@@ -189,9 +189,9 @@ const Index = () => {
       log.error("Avatar upload error:", error);
       return null;
     }
-  };
+  }, [user]);
 
-  const handleSaveProfile = async () => {
+  const handleSaveProfile = useCallback(async () => {
     if (!user) return;
     setSaving(true);
     try {
@@ -220,7 +220,7 @@ const Index = () => {
     } finally {
       setSaving(false);
     }
-  };
+  }, [user, formData, avatarFile, handleAvatarUpload]);
 
   const handleForgotPassword = async () => {
     if (!user?.email) {
