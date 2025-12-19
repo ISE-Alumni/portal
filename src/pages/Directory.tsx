@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,37 +37,37 @@ const Directory = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(12);
 
-  // Load all profiles on mount
-  useEffect(() => {
-    const loadProfiles = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  // Load all profiles on mount - useCallback
+  const loadProfiles = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const [profilesData, partners] = await Promise.all([
-          getProfiles(),
-          getResidencyPartners(),
-        ]);
+      const [profilesData, partners] = await Promise.all([
+        getProfiles(),
+        getResidencyPartners(),
+      ]);
 
-        setAllProfiles(profilesData);
-        setFilteredProfiles(profilesData);
+      setAllProfiles(profilesData);
+      setFilteredProfiles(profilesData);
 
-        if (partners && partners.length > 0) {
-          setCompanyLogoMap(buildCompanyLogoMap(partners));
-        }
-      } catch (err) {
-        log.error("Error loading profiles:", err);
-        setError("Failed to load alumni profiles. Please try again.");
-      } finally {
-        setLoading(false);
+      if (partners && partners.length > 0) {
+        setCompanyLogoMap(buildCompanyLogoMap(partners));
       }
-    };
-
-    loadProfiles();
+    } catch (err) {
+      log.error("Error loading profiles:", err);
+      setError("Failed to load alumni profiles. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // Filter profiles when search term or professional status filter changes
   useEffect(() => {
+    loadProfiles();
+  }, [loadProfiles]);
+
+  // Filter profiles when search term or professional status filter changes - memoized
+  const filteredProfilesMemo = useMemo(() => {
     const filters: FilterOptions = {};
     
     // Add search filter if there's a search term
@@ -85,15 +85,22 @@ const Directory = () => {
     const filtered = filterProfiles(allProfiles, filters);
     const sorted = sortProfiles(filtered, sortOption);
     
-    setFilteredProfiles(sorted);
-    setCurrentPage(1); // Reset to first page when filters change
+    return sorted;
   }, [searchTerm, professionalStatusFilter, allProfiles]);
 
-  // Pagination calculations
-  const paginationResult = paginateData(filteredProfiles, {
-    page: currentPage,
-    limit: itemsPerPage
-  });
+  useEffect(() => {
+    setFilteredProfiles(filteredProfilesMemo);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [filteredProfilesMemo]);
+
+  // Pagination calculations - memoized
+  const paginationResult = useMemo(() => 
+    paginateData(filteredProfiles, {
+      page: currentPage,
+      limit: itemsPerPage
+    }),
+    [filteredProfiles, currentPage, itemsPerPage]
+  );
   const paginatedProfiles = paginationResult.data;
   const totalPages = paginationResult.totalPages;
   const navigate = useNavigate();

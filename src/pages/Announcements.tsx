@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -137,32 +137,36 @@ export const Announcements = () => {
     setFilters(filters);
   }, [selectedTag, setFilters]);
 
-  // Apply sorting
-  const sortOption: SortOption = {
+  // Apply sorting - memoized
+  const sortOption: SortOption = useMemo(() => ({
     field: sortBy,
     direction: sortBy === 'created_at' ? 'desc' : 'asc'
-  };
+  }), [sortBy]);
 
-  // Separate current/upcoming from past announcements
-  const currentAnnouncements = (filteredData || []).filter(announcement => {
-    if (announcement.deadline && !isDateInPast(announcement.deadline)) {
-      return true;
-    }
-    if (!announcement.deadline && isDateWithinLastDays(announcement.created_at, 30)) {
-      return true;
-    }
-    return false;
-  });
-  
-  const pastAnnouncements = (filteredData || []).filter(announcement => {
-    if (announcement.deadline && isDateInPast(announcement.deadline)) {
-      return true;
-    }
-    if (!announcement.deadline && !isDateWithinLastDays(announcement.created_at, 30)) {
-      return true;
-    }
-    return false;
-  });
+  // Separate current/upcoming from past announcements - memoized
+  const { currentAnnouncements, pastAnnouncements } = useMemo(() => {
+    const current = (filteredData || []).filter(announcement => {
+      if (announcement.deadline && !isDateInPast(announcement.deadline)) {
+        return true;
+      }
+      if (!announcement.deadline && isDateWithinLastDays(announcement.created_at, 30)) {
+        return true;
+      }
+      return false;
+    });
+    
+    const past = (filteredData || []).filter(announcement => {
+      if (announcement.deadline && isDateInPast(announcement.deadline)) {
+        return true;
+      }
+      if (!announcement.deadline && !isDateWithinLastDays(announcement.created_at, 30)) {
+        return true;
+      }
+      return false;
+    });
+
+    return { currentAnnouncements: current, pastAnnouncements: past };
+  }, [filteredData]);
 
   // Use pagination hooks
   const upcomingPagination = usePagination(currentAnnouncements, { initialItemsPerPage: 6 });
@@ -174,15 +178,18 @@ export const Announcements = () => {
     pastPagination.resetPagination();
   }, [selectedTag, sortBy, upcomingPagination, pastPagination]);
 
-  const handleCreateAnnouncement = async (data: unknown) => {
+  const handleCreateAnnouncement = useCallback(async (data: unknown) => {
     if (!user) return;
 
     log.info('Announcement created successfully');
     setIsModalOpen(false);
     refetch(); // Refresh announcements list
-  };
+  }, [user, refetch]);
 
-  const canCreateAnnouncement = canUserCreateAnnouncements(userProfile?.user_type || null);
+  const canCreateAnnouncement = useMemo(() => 
+    canUserCreateAnnouncements(userProfile?.user_type || null),
+    [userProfile]
+  );
 
   if (loading) {
     return (
