@@ -4,8 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { useParams, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { formatDate } from "@/lib/utils/date";
 import { 
   CalendarIcon, 
   MapPinIcon, 
@@ -18,38 +18,8 @@ import {
   Trash2Icon
 } from "lucide-react";
 import EditEventModal from "@/components/EditEventModal";
+import { getEventById, deleteEvent } from '@/lib/domain/events';
 import { log } from '@/lib/utils/logger';
-import { SupabaseClient } from '@/integrations/supabase/types';
-
-// Temporary interface for Supabase response
-interface SupabaseEvent {
-  id: string;
-  title: string;
-  description: string | null;
-  location: string | null;
-  location_url: string | null;
-  registration_url: string | null;
-  start_at: string;
-  end_at: string | null;
-  organiser_profile_id: string | null;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-  image_url: string | null;
-  event_tags?: Array<{
-    tag: {
-      id: string;
-      name: string;
-      color: string;
-    };
-  }>;
-  organiser?: {
-    id: string;
-    full_name: string | null;
-    email: string | null;
-    email_visible: boolean | null;
-  };
-}
 
 // Event data interface
 interface EventData {
@@ -96,53 +66,29 @@ const EventDetail = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch event with organiser profile data and tags
-      const { data, error: fetchError } = await (supabase as SupabaseClient)
-        .from('events')
-        .select(`
-          *,
-          organiser:organiser_profile_id (
-            id,
-            full_name,
-            email,
-            email_visible
-          ),
-          event_tags (
-            tag:tags (
-              id,
-              name,
-              color
-            )
-          )
-        `)
-        .eq('id', id)
-        .single();
+      const eventData = await getEventById(id);
 
-      if (fetchError) {
-        throw fetchError;
-      }
-
-      if (!data) {
+      if (!eventData) {
         throw new Error('Event not found');
       }
 
       // Transform the data to match our interface
       const transformedData: EventData = {
-        id: (data as SupabaseEvent).id,
-        title: (data as SupabaseEvent).title,
-        description: (data as SupabaseEvent).description,
-        location: (data as SupabaseEvent).location,
-        location_url: (data as SupabaseEvent).location_url,
-        registration_url: (data as SupabaseEvent).registration_url,
-        start_at: (data as SupabaseEvent).start_at,
-        end_at: (data as SupabaseEvent).end_at,
-        organiser_profile_id: (data as SupabaseEvent).organiser_profile_id,
-        created_by: (data as SupabaseEvent).created_by,
-        created_at: (data as SupabaseEvent).created_at,
-        updated_at: (data as SupabaseEvent).updated_at,
-        image_url: (data as SupabaseEvent).image_url || null,
-        tags: (data as SupabaseEvent).event_tags?.map((et: { tag: { id: string; name: string; color: string } }) => et.tag) || null,
-        organiser: (data as SupabaseEvent).organiser,
+        id: eventData.id,
+        title: eventData.title,
+        description: eventData.description,
+        location: eventData.location,
+        location_url: eventData.location_url,
+        registration_url: eventData.registration_url,
+        start_at: eventData.start_at,
+        end_at: eventData.end_at,
+        organiser_profile_id: eventData.organiser_profile_id,
+        created_by: eventData.created_by,
+        created_at: eventData.created_at,
+        updated_at: eventData.updated_at,
+        image_url: eventData.image_url || null,
+        tags: eventData.event_tags?.map((et) => et.tags) || null,
+        organiser: eventData.organiser,
       };
 
       setEvent(transformedData);
@@ -202,16 +148,6 @@ const EventDetail = () => {
     return date > today ? 'upcoming' : 'past';
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString('en-US', {
@@ -233,12 +169,11 @@ const EventDetail = () => {
 
     try {
       setIsDeleting(true);
-      const { error: deleteError } = await supabase
-        .from('events')
-        .delete()
-        .eq('id', event.id);
+      const success = await deleteEvent(event.id);
 
-      if (deleteError) throw deleteError;
+      if (!success) {
+        throw new Error('Failed to delete event');
+      }
 
       navigate('/events');
     } catch (err) {

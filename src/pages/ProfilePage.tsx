@@ -3,13 +3,15 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, Mail, ArrowLeft, ExternalLink, MapPin, Briefcase, GraduationCap, Github, Linkedin, Twitter, Globe, Paperclip, Building2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { formatDate } from '@/lib/utils/date';
 import { log } from '@/lib/utils/logger';
 import { Profile, ProfessionalStatus } from '@/lib/types';
 import { EventData } from '@/lib/types/events';
-import { getUserResidencies, type Residency, type ResidencyPartner } from '@/lib/domain/residency';
+import { getUserResidencies, getResidencyPartners, type Residency, type ResidencyPartner } from '@/lib/domain/residency';
+import { getProfileById } from '@/lib/domain/profiles';
+import { getAnnouncementsByUserId } from '@/lib/domain/announcements';
+import { getEventsByUserId } from '@/lib/domain/events';
 import { getCohortLabel, getCohortBadgeClass } from '@/lib/utils/ui';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -19,81 +21,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { CompanyLogo } from '@/components/CompanyLogo';
 import { buildCompanyLogoMap, getCompanyLogoUrl } from '@/lib/utils/companyLogo';
 
-interface Announcement {
-  id: string;
-  title: string;
-  content: string | null;
-  external_url: string | null;
-  deadline: string | null;
-  image_url: string | null;
-  created_at: string;
-  updated_at: string;
-  creator?: {
-    id: string;
-    full_name: string | null;
-    email: string | null;
-    email_visible: boolean | null;
-  } | null;
-  tags?: Array<{
-    id: string;
-    name: string;
-    color: string;
-  }>;
-}
-
-interface AnnouncementQueryResult {
-  id: string;
-  title: string;
-  content: string | null;
-  external_url: string | null;
-  deadline: string | null;
-  image_url: string | null;
-  created_at: string;
-  updated_at: string;
-  profiles?: {
-    id: string;
-    full_name: string | null;
-    email: string | null;
-    email_visible: boolean | null;
-  } | null;
-  announcement_tags?: Array<{
-    tag_id: string;
-    tags: {
-      id: string;
-      name: string;
-      color: string;
-    };
-  }>;
-}
-
-interface EventQueryResult {
-  id: string;
-  title: string;
-  description: string | null;
-  location: string | null;
-  location_url: string | null;
-  registration_url: string | null;
-  start_at: string;
-  end_at: string | null;
-  organiser_profile_id: string | null;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-  image_url: string | null;
-  profiles?: {
-    id: string;
-    full_name: string | null;
-    email: string | null;
-  } | null;
-  event_tags?: Array<{
-    tag_id: string;
-    tags: {
-      id: string;
-      name: string;
-      color: string;
-    };
-  }>;
-}
+import { type Announcement } from '@/lib/types';
 
 const ProfilePage = () => {
   const { id } = useParams<{ id: string }>();
@@ -109,126 +37,33 @@ const ProfilePage = () => {
 
   useEffect(() => {
     const fetchProfileAndData = async () => {
+      if (!id) return;
+      
       try {
-        // Fetch profile
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', id)
-          .single();
+        // Fetch profile, announcements, events, and residencies in parallel
+        const [profileData, announcementsData, eventsData, residencies, partners] = await Promise.all([
+          getProfileById(id),
+          getAnnouncementsByUserId(id),
+          getEventsByUserId(id),
+          getProfileById(id).then(p => p ? getUserResidencies(p.user_id) : Promise.resolve([])),
+          getResidencyPartners()
+        ]);
 
         if (profileData) {
           setProfile(profileData);
         }
 
-        // Fetch announcements created by this user
-        const { data: announcementsData } = await supabase
-          .from('announcements')
-          .select(`
-            *,
-            profiles!organiser_profile_id (
-              id,
-              full_name,
-              email,
-              email_visible
-            ),
-            announcement_tags!inner(
-              tag_id,
-              tags!inner(
-                id,
-                  name,
-                  color
-              )
-            )
-          `)
-          .eq('created_by', id)
-          .order('created_at', { ascending: false });
-
-        if (announcementsData) {
-          const transformedAnnouncements = (announcementsData as AnnouncementQueryResult[]).map((announcement) => ({
-            id: announcement.id,
-            title: announcement.title,
-            content: announcement.content,
-            external_url: announcement.external_url,
-            deadline: announcement.deadline,
-            image_url: announcement.image_url || 'https://placehold.co/600x400',
-            created_at: announcement.created_at,
-            updated_at: announcement.updated_at,
-            creator: announcement.profiles,
-            tags: announcement.announcement_tags?.map((tagRelation) => ({
-              id: tagRelation.tags.id,
-              name: tagRelation.tags.name,
-              color: tagRelation.tags.color
-            })) || []
-          }));
-
-          setUserAnnouncements(transformedAnnouncements);
-        }
-
-        // Fetch events created by this user
-        const { data: eventsData } = await supabase
-          .from('events')
-          .select(`
-            *,
-            profiles!organiser_profile_id (
-              id,
-              full_name,
-              email
-            ),
-            event_tags!inner(
-              tag_id,
-              tags!inner(
-                id,
-                  name,
-                  color
-              )
-            )
-          `)
-          .eq('created_by', id)
-          .order('start_at', { ascending: false });
-
-        if (eventsData) {
-          const transformedEvents = (eventsData as EventQueryResult[]).map((event) => ({
-            id: event.id,
-            title: event.title,
-            description: event.description,
-            location: event.location,
-            location_url: event.location_url,
-            registration_url: event.registration_url,
-            start_at: event.start_at,
-            end_at: event.end_at,
-            organiser_profile_id: event.organiser_profile_id,
-            created_by: event.created_by,
-            created_at: event.created_at,
-            updated_at: event.updated_at,
-            image_url: event.image_url,
-            event_tags: event.event_tags?.map((tagRelation) => ({
-              tag_id: tagRelation.tag_id,
-              tags: {
-                id: tagRelation.tags.id,
-                name: tagRelation.tags.name,
-                color: tagRelation.tags.color
-              }
-            })) || [],
-            organiser: event.profiles
-          }));
-
-          setUserEvents(transformedEvents);
-        }
-
-        // Fetch user's residencies with company details
-        const [residencies, partners] = await Promise.all([
-          getUserResidencies(profileData?.user_id || ''),
-          supabase.from('residency_partners').select('*').eq('is_active', true).order('name')
-        ]);
+        // Domain functions return correct types - no transformation needed
+        setUserAnnouncements(announcementsData);
+        setUserEvents(eventsData);
 
         if (residencies) {
           setUserResidencies(residencies);
         }
 
-        if (partners.data) {
-          setResidencyPartners(partners.data);
-          setCompanyLogoMap(buildCompanyLogoMap(partners.data as ResidencyPartner[]));
+        if (partners && partners.length > 0) {
+          setResidencyPartners(partners);
+          setCompanyLogoMap(buildCompanyLogoMap(partners));
         }
       } catch (err) {
         log.error('Error fetching profile:', err);

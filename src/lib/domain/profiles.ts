@@ -50,6 +50,48 @@ export async function getProfileByUserId(userId: string): Promise<Profile | null
   return data;
 }
 
+export async function getProfileById(profileId: string): Promise<Profile | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', profileId)
+    .eq('removed', false)
+    .single();
+
+  if (error) {
+    log.error('Error fetching profile by ID:', error);
+    return null;
+  }
+
+  return data;
+}
+
+export async function uploadAvatar(userId: string, file: File): Promise<string | null> {
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${userId}.${fileExt}`;
+    const filePath = `avatars/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) {
+      log.error('Error uploading avatar:', uploadError);
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('avatars')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  } catch (error) {
+    log.error('Error in uploadAvatar:', error);
+    return null;
+  }
+}
+
 export async function getUserProfileType(userId: string): Promise<string | null> {
   const { data, error } = await supabase
     .from('profiles')
@@ -134,6 +176,20 @@ export function isProfileComplete(profile: Profile): boolean {
     profile.company &&
     profile.job_title
   );
+}
+
+export function calculateProfileCompletionPercentage(profile: Profile | null): number {
+  if (!profile) return 0;
+  
+  const requiredFields = [
+    profile.full_name,
+    profile.bio,
+    profile.company,
+    profile.job_title
+  ];
+  
+  const completedFields = requiredFields.filter(field => field && field.trim() !== '').length;
+  return Math.round((completedFields / requiredFields.length) * 100);
 }
 
 export interface UserActivity {

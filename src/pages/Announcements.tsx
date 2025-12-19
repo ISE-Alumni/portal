@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
@@ -8,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import NewEventModal from '@/components/NewEventModal';
 import { Announcement, type Tag } from '@/lib/types';
 import { getAnnouncements } from '@/lib/domain/announcements';
+import { getUserProfileType } from '@/lib/domain/profiles';
 import { formatDateShort, isDateInPast, isDateWithinLastDays } from '@/lib/utils/date';
 import { handleImageError } from '@/lib/utils/images';
 import { filterAnnouncements, sortAnnouncements, type SortOption } from '@/lib/utils/data';
@@ -113,13 +113,10 @@ export const Announcements = () => {
   const fetchUserProfile = useCallback(async () => {
     if (!user) return;
     
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('user_type')
-      .eq('user_id', user.id)
-      .single();
-    
-    setUserProfile(profile);
+    const userType = await getUserProfileType(user.id);
+    if (userType) {
+      setUserProfile({ user_type: userType });
+    }
   }, [user]);
 
   useEffect(() => {

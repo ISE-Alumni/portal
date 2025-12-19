@@ -4,8 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { useParams, useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { formatDate } from "@/lib/utils/date";
 import { 
   CalendarIcon, 
   ClockIcon, 
@@ -18,9 +18,8 @@ import {
   Trash2Icon
 } from "lucide-react";
 import EditAnnouncementModal from "@/components/EditAnnouncementModal";
-// import { getAnnouncementById } from '@/lib/domain/announcements';
+import { getAnnouncementById, deleteAnnouncement } from '@/lib/domain/announcements';
 import { log } from '@/lib/utils/logger';
-import type { ProfileRow, AnnouncementRow } from '@/integrations/supabase/types';
 
 // Announcement data interface
 interface AnnouncementData {
@@ -67,69 +66,30 @@ const AnnouncementDetail = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch announcement with organiser profile data and tags
-      const { data, error: fetchError } = await supabase
-        .from('announcements')
-        .select(`
-          *,
-          organiser:organiser_profile_id (
-            id,
-            full_name,
-            email,
-            email_visible
-          ),
-          announcement_tags!inner(
-            tag_id,
-              tags!inner(
-                id,
-                  name,
-                  color
-              )
-            )
-          )
-        `)
-        .eq('id', id)
-        .single();
+      const announcementData = await getAnnouncementById(id);
 
-       if (fetchError) {
-         throw fetchError;
-       }
+      if (!announcementData) {
+        throw new Error('Announcement not found');
+      }
 
-       if (!data) {
-         throw new Error('Announcement not found');
-       }
+      const transformedData: AnnouncementData = {
+        id: announcementData.id,
+        title: announcementData.title,
+        content: announcementData.content,
+        external_url: announcementData.external_url,
+        deadline: announcementData.deadline,
+        image_url: announcementData.image_url || 'https://placehold.co/600x400',
+        created_by: announcementData.created_by,
+        created_at: announcementData.created_at,
+        updated_at: announcementData.updated_at,
+        slug: announcementData.slug || null,
+        organiser_profile_id: announcementData.organiser_profile_id,
+        organiser: announcementData.organiser || null,
+        tags: announcementData.tags || [],
+        creator: announcementData.organiser || null,
+      };
 
-         // Transform data to match our interface
-         const announcementData = data as AnnouncementRow & { 
-           organiser?: { id: string; full_name: string | null; email: string | null; email_visible: boolean | null } | null;
-           announcement_tags?: Array<{ 
-             tag_id: string; 
-               tags: { id: string; name: string; color: string } 
-           }> 
-         };
-        
-         const transformedData: AnnouncementData = {
-         id: announcementData.id,
-         title: announcementData.title,
-         content: announcementData.content,
-         external_url: announcementData.external_url,
-         deadline: announcementData.deadline,
-         image_url: announcementData.image_url || 'https://placehold.co/600x400',
-         created_by: announcementData.created_by,
-         created_at: announcementData.created_at,
-         updated_at: announcementData.updated_at,
-         slug: announcementData.slug,
-         organiser_profile_id: announcementData.organiser_profile_id,
-         organiser: announcementData.organiser,
-         tags: announcementData.announcement_tags?.map((tagRelation) => ({
-           id: tagRelation.tags.id,
-           name: tagRelation.tags.name,
-           color: tagRelation.tags.color
-         })) || [],
-           creator: announcementData.organiser as ProfileRow | null, // Use organiser as creator
-         };
-
-       setAnnouncement(transformedData);
+      setAnnouncement(transformedData);
     } catch (err) {
       log.error('Error fetching announcement:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch announcement');
@@ -187,16 +147,6 @@ const AnnouncementDetail = () => {
     return date > today ? 'active' : 'expired';
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
 
 
   const imageUrl = announcement.image_url || `https://placehold.co/600x400?text=Announcement+${announcement.id}`;
@@ -211,12 +161,11 @@ const AnnouncementDetail = () => {
 
     try {
       setIsDeleting(true);
-      const { error: deleteError } = await supabase
-        .from('announcements')
-        .delete()
-        .eq('id', announcement.id);
+      const success = await deleteAnnouncement(announcement.id);
 
-      if (deleteError) throw deleteError;
+      if (!success) {
+        throw new Error('Failed to delete announcement');
+      }
 
       navigate('/announcements');
     } catch (err) {
