@@ -5,6 +5,7 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { useNavigate, Link } from "react-router-dom";
 import { LogOut  } from "lucide-react";
 import { Drawer, DrawerTrigger, DrawerContent, DrawerClose, DrawerTitle } from "@/components/ui/drawer";
+import { isFeatureEnabled } from "@/config/features";
 
 interface LayoutProps {
   children: ReactNode;
@@ -46,7 +47,7 @@ const Layout = ({ children }: LayoutProps) => {
                  <DrawerTitle className="sr-only">Navigation Menu</DrawerTitle>
                  <div className="p-4">
                    <nav className="flex flex-col gap-4 text-sm justify-center items-center">
-                     {profile && ['Admin', 'Staff'].includes(profile.user_type) && (
+                     {profile && ['Admin', 'Staff'].includes(profile.user_type) && isFeatureEnabled('ADMIN_DASHBOARD_ENABLED') && (
                        <DrawerClose asChild>
                          <Button asChild variant="outline" className="w-full max-w-xs">
                            <Link to="/dashboard">
@@ -94,7 +95,7 @@ const Layout = ({ children }: LayoutProps) => {
              {/* Desktop - Inline Navbar */}
              <div className="hidden lg:flex items-center gap-4">
                <nav className="flex items-center gap-4">
-                 {profile && ['Admin', 'Staff'].includes(profile.user_type) && (
+                 {profile && ['Admin', 'Staff'].includes(profile.user_type) && isFeatureEnabled('ADMIN_DASHBOARD_ENABLED') && (
                    <Button asChild variant="outline">
                      <Link to="/dashboard">
                        Dashboard

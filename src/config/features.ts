@@ -10,10 +10,11 @@ export const FEATURE_FLAGS = {
   // Email features
   WELCOME_EMAIL_SERIES_ENABLED: false, // Set to true to enable welcome email series
 
-  // Add more feature flags here as needed
-  // PROFILE_EDITING: true,
-  // MESSAGING: true,
-  // etc.
+  // Admin features
+  ADMIN_DASHBOARD_ENABLED: true, // Set to true to enable admin dashboard
+
+  // Analytics features
+  GAWK_ENABLED: true, // Set to true to enable gawk analytics page
 } as const;
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS;

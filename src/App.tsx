@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { Analytics } from "@vercel/analytics/react";
+import { isFeatureEnabled } from "@/config/features";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -38,8 +39,12 @@ const App = () => (
             <Route path="/events/:id" element={<Layout><EventDetail /></Layout>} />
             <Route path="/directory" element={<Layout><Directory /></Layout>} />
             <Route path="/profile/:id" element={<Layout><ProfilePage /></Layout>} />
-            <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
-            <Route path="/gawk" element={<Layout><Gawk /></Layout>} />
+            {isFeatureEnabled('ADMIN_DASHBOARD_ENABLED') && (
+              <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+            )}
+            {isFeatureEnabled('GAWK_ENABLED') && (
+              <Route path="/gawk" element={<Layout><Gawk /></Layout>} />
+            )}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
